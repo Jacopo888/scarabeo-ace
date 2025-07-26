@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils"
+import { ScrabbleTile } from "./ScrabbleTile"
+import { useState } from "react"
 
 // Definizioni delle caselle speciali
 const SPECIAL_SQUARES = {
@@ -60,20 +62,84 @@ const getSquareText = (type: string) => {
   }
 }
 
-export const ScrabbleBoard = () => {
+interface PlacedTile {
+  letter: string
+  points: number
+  isBlank?: boolean
+}
+
+interface ScrabbleBoardProps {
+  onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
+}
+
+export const ScrabbleBoard = ({ onTilePlaced }: ScrabbleBoardProps = {}) => {
+  const [placedTiles, setPlacedTiles] = useState<Map<string, PlacedTile>>(new Map())
+  const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
+  const handleDrop = (e: React.DragEvent, row: number, col: number) => {
+    e.preventDefault()
+    setDragOverSquare(null)
+    
+    const key = `${row},${col}`
+    if (placedTiles.has(key)) return // Square already occupied
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("application/json"))
+      if (data.source === "rack") {
+        const newTile: PlacedTile = {
+          letter: data.tile.letter,
+          points: data.tile.points,
+          isBlank: data.tile.isBlank
+        }
+        
+        setPlacedTiles(prev => new Map(prev).set(key, newTile))
+        onTilePlaced?.(row, col, newTile)
+      }
+    } catch (error) {
+      console.error("Failed to parse drop data:", error)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent, key: string) => {
+    if (!placedTiles.has(key)) {
+      e.preventDefault()
+      setDragOverSquare(key)
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverSquare(null)
+  }
+
   const renderSquare = (row: number, col: number) => {
     const key = `${row},${col}`
     const specialType = SPECIAL_SQUARES[key as keyof typeof SPECIAL_SQUARES]
+    const placedTile = placedTiles.get(key)
+    const isDragOver = dragOverSquare === key
     
     return (
       <div
         key={key}
         className={cn(
-          "w-9 h-9 border border-board-border flex items-center justify-center text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity rounded",
-          getSquareColor(specialType || "")
+          "w-9 h-9 border border-board-border flex items-center justify-center text-xs font-bold transition-all rounded relative",
+          getSquareColor(specialType || ""),
+          !placedTile && "cursor-pointer",
+          isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10"
         )}
+        onDrop={(e) => handleDrop(e, row, col)}
+        onDragOver={(e) => handleDragOver(e, key)}
+        onDragLeave={handleDragLeave}
       >
-        {getSquareText(specialType || "")}
+        {placedTile ? (
+          <ScrabbleTile
+            letter={placedTile.letter}
+            points={placedTile.points}
+            isBlank={placedTile.isBlank}
+            isOnBoard={true}
+            className="w-8 h-8 text-[10px]"
+          />
+        ) : (
+          getSquareText(specialType || "")
+        )}
       </div>
     )
   }
