@@ -182,8 +182,10 @@ export const useBot = () => {
   }, [])
 
   const makeBotMove = useCallback(async (): Promise<void> => {
-    // This will be called from the game context when it's the bot's turn
-    // Implementation will be handled in the game logic
+    setIsBotThinking(true)
+    // Simulate thinking time
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
+    setIsBotThinking(false)
   }, [])
 
   return {

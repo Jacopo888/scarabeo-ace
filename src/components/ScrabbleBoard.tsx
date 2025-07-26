@@ -68,9 +68,10 @@ interface ScrabbleBoardProps {
   placedTiles?: Map<string, PlacedTile>
   pendingTiles?: PlacedTile[]
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
+  onTilePickup?: (row: number, col: number) => void
 }
 
-export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTilePlaced }: ScrabbleBoardProps) => {
+export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTilePlaced, onTilePickup }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     e.preventDefault()
@@ -133,16 +134,28 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTi
         onDragLeave={handleDragLeave}
       >
         {currentTile ? (
-          <ScrabbleTile
-            letter={currentTile.letter}
-            points={currentTile.points}
-            isBlank={currentTile.isBlank}
-            isOnBoard={true}
+          <div
+            onClick={() => {
+              // Allow picking up pending tiles only
+              if (pendingTile && onTilePickup) {
+                onTilePickup(row, col)
+              }
+            }}
             className={cn(
-              "w-8 h-8 text-[10px]",
-              pendingTile && "border-yellow-400 bg-yellow-50" // Style pending tiles differently
+              pendingTile && "cursor-pointer"
             )}
-          />
+          >
+            <ScrabbleTile
+              letter={currentTile.letter}
+              points={currentTile.points}
+              isBlank={currentTile.isBlank}
+              isOnBoard={true}
+              className={cn(
+                "w-8 h-8 text-[10px]",
+                pendingTile && "border-yellow-400 bg-yellow-50 hover:bg-yellow-100" // Style pending tiles differently
+              )}
+            />
+          </div>
         ) : (
           getSquareText(specialType || "")
         )}

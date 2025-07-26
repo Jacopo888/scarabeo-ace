@@ -14,6 +14,7 @@ const GameContent = () => {
     gameState, 
     pendingTiles, 
     placeTile, 
+    pickupTile,
     confirmMove, 
     cancelMove, 
     endTurn, 
@@ -21,7 +22,8 @@ const GameContent = () => {
     currentPlayer,
     reshuffleTiles,
     collectAllTiles,
-    passTurn
+    passTurn,
+    isBotTurn
   } = useGameContext()
 
   return (
@@ -42,30 +44,56 @@ const GameContent = () => {
           <div className="text-center">
             <p className="text-lg font-medium">
               Turn: {currentPlayer.name} (Score: {currentPlayer.score})
+              {isBotTurn && currentPlayer.isBot && (
+                <span className="ml-2 text-sm text-muted-foreground animate-pulse">
+                  🤖 Bot is thinking...
+                </span>
+              )}
             </p>
             <p className="text-sm text-muted-foreground">
-              Tiles remaining: {gameState.tileBag.length}
+              Tiles remaining: {gameState.tileBag.length} | 
+              Game mode: {gameState.gameMode === 'bot' ? 'vs Bot' : 'Multiplayer'}
             </p>
           </div>
 
           <div className="flex justify-center gap-2 flex-wrap">
             {pendingTiles.length > 0 && (
               <>
-                <Button onClick={confirmMove} variant="default">
+                <Button 
+                  onClick={confirmMove} 
+                  variant="default"
+                  disabled={isBotTurn}
+                >
                   Confirm Move ({pendingTiles.length} tiles)
                 </Button>
-                <Button onClick={cancelMove} variant="outline">
+                <Button 
+                  onClick={cancelMove} 
+                  variant="outline"
+                  disabled={isBotTurn}
+                >
                   Cancel Move
                 </Button>
-                <Button onClick={collectAllTiles} variant="outline">
+                <Button 
+                  onClick={collectAllTiles} 
+                  variant="outline"
+                  disabled={isBotTurn}
+                >
                   Collect All
                 </Button>
               </>
             )}
-            <Button onClick={passTurn} variant="outline" disabled={pendingTiles.length > 0}>
+            <Button 
+              onClick={passTurn} 
+              variant="outline" 
+              disabled={pendingTiles.length > 0 || isBotTurn || currentPlayer.isBot}
+            >
               Pass Turn
             </Button>
-            <Button onClick={endTurn} variant="outline" disabled={pendingTiles.length > 0}>
+            <Button 
+              onClick={endTurn} 
+              variant="outline" 
+              disabled={pendingTiles.length > 0 || isBotTurn || currentPlayer.isBot}
+            >
               End Turn
             </Button>
             <Button onClick={resetGame} variant="outline">
@@ -79,16 +107,20 @@ const GameContent = () => {
                 placedTiles={gameState.board}
                 pendingTiles={pendingTiles}
                 onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
+                onTilePickup={(row, col) => pickupTile(row, col)}
               />
             </div>
-            <div className="mt-6 space-y-4">
-              <TileRack tiles={currentPlayer.rack} />
-              <TileActions 
-                onReshuffle={reshuffleTiles}
-                onCollectAll={collectAllTiles}
-                hasPendingTiles={pendingTiles.length > 0}
-              />
-            </div>
+            {!currentPlayer.isBot && (
+              <div className="mt-6 space-y-4">
+                <TileRack tiles={currentPlayer.rack} />
+                <TileActions 
+                  onReshuffle={reshuffleTiles}
+                  onCollectAll={collectAllTiles}
+                  hasPendingTiles={pendingTiles.length > 0}
+                  disabled={isBotTurn}
+                />
+              </div>
+            )}
           </div>
         </div>
 

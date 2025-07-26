@@ -6,6 +6,7 @@ interface GameContextType {
   gameState: GameState
   pendingTiles: PlacedTile[]
   placeTile: (row: number, col: number, tile: Tile) => void
+  pickupTile: (row: number, col: number) => void
   confirmMove: () => void
   cancelMove: () => void
   endTurn: () => void
@@ -13,6 +14,8 @@ interface GameContextType {
   reshuffleTiles: () => void
   collectAllTiles: () => void
   passTurn: () => void
+  makeBotMove: () => Promise<void>
+  isBotTurn: boolean
   currentPlayer: Player
   isCurrentPlayerTurn: (playerId: string) => boolean
 }

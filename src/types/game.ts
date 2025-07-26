@@ -14,6 +14,7 @@ export interface Player {
   name: string
   score: number
   rack: Tile[]
+  isBot?: boolean
 }
 
 export interface GameState {
@@ -23,6 +24,8 @@ export interface GameState {
   tileBag: Tile[]
   gameStatus: 'waiting' | 'playing' | 'finished'
   lastMove?: PlacedTile[]
+  gameMode?: 'human' | 'bot'
+  passCount?: number
 }
 
 // Standard Scrabble tile distribution

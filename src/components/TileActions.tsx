@@ -5,15 +5,17 @@ interface TileActionsProps {
   onReshuffle: () => void
   onCollectAll: () => void
   hasPendingTiles: boolean
+  disabled?: boolean
 }
 
-export const TileActions = ({ onReshuffle, onCollectAll, hasPendingTiles }: TileActionsProps) => {
+export const TileActions = ({ onReshuffle, onCollectAll, hasPendingTiles, disabled = false }: TileActionsProps) => {
   return (
     <div className="flex justify-center gap-2">
       <Button
         variant="outline"
         size="sm"
         onClick={onReshuffle}
+        disabled={disabled}
         className="flex items-center gap-2"
       >
         <Shuffle className="h-4 w-4" />
@@ -25,6 +27,7 @@ export const TileActions = ({ onReshuffle, onCollectAll, hasPendingTiles }: Tile
           variant="outline"
           size="sm"
           onClick={onCollectAll}
+          disabled={disabled}
           className="flex items-center gap-2"
         >
           <RotateCcw className="h-4 w-4" />
