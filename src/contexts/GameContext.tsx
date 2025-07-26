@@ -10,6 +10,9 @@ interface GameContextType {
   cancelMove: () => void
   endTurn: () => void
   resetGame: () => void
+  reshuffleTiles: () => void
+  collectAllTiles: () => void
+  passTurn: () => void
   currentPlayer: Player
   isCurrentPlayerTurn: (playerId: string) => boolean
 }

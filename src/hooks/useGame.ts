@@ -164,6 +164,53 @@ export const useGame = () => {
     })
   }, [pendingTiles])
 
+  const reshuffleTiles = useCallback(() => {
+    setGameState(prev => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const shuffledRack = shuffleArray([...currentPlayer.rack])
+      
+      const newPlayers = [...prev.players]
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        rack: shuffledRack
+      }
+      
+      return {
+        ...prev,
+        players: newPlayers
+      }
+    })
+  }, [])
+
+  const collectAllTiles = useCallback(() => {
+    if (pendingTiles.length === 0) return
+    
+    setGameState(prev => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const newPlayers = [...prev.players]
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        rack: [...currentPlayer.rack, ...pendingTiles]
+      }
+      
+      setPendingTiles([])
+      
+      return {
+        ...prev,
+        players: newPlayers
+      }
+    })
+  }, [pendingTiles])
+
+  const passTurn = useCallback(() => {
+    setGameState(prev => {
+      return {
+        ...prev,
+        currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length
+      }
+    })
+  }, [])
+
   const endTurn = useCallback(() => {
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
@@ -228,6 +275,9 @@ export const useGame = () => {
     cancelMove,
     endTurn,
     resetGame,
+    reshuffleTiles,
+    collectAllTiles,
+    passTurn,
     currentPlayer: gameState.players[gameState.currentPlayerIndex],
     isCurrentPlayerTurn: (playerId: string) => gameState.players[gameState.currentPlayerIndex].id === playerId
   }

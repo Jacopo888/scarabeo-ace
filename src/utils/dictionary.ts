@@ -170,3 +170,11 @@ export const validateWords = (words: string[]): { valid: string[], invalid: stri
   
   return { valid, invalid }
 }
+
+export const checkWord = async (word: string): Promise<boolean> => {
+  return ENABLE_WORDS.has(word.toUpperCase())
+}
+
+export const checkWords = (words: string[]): boolean => {
+  return words.every(word => ENABLE_WORDS.has(word.toUpperCase()))
+}
