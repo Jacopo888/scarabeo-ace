@@ -10,58 +10,58 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Light theme - chess.com inspired */
-    --background: 218 18% 97%;
-    --foreground: 220 9% 20%;
+    /* Yellowish paper theme with black text */
+    --background: 45 25% 94%; /* Warm yellowish paper background */
+    --foreground: 0 0% 8%; /* Deep black text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 9% 20%;
+    --card: 43 30% 96%; /* Slightly warmer card background */
+    --card-foreground: 0 0% 8%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 9% 20%;
+    --popover: 43 30% 96%;
+    --popover-foreground: 0 0% 8%;
 
-    --primary: 215 85% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 15%; /* Dark charcoal for primary elements */
+    --primary-foreground: 45 25% 94%;
 
-    --secondary: 215 20% 95%;
-    --secondary-foreground: 220 9% 20%;
+    --secondary: 42 20% 88%; /* Muted yellowish secondary */
+    --secondary-foreground: 0 0% 8%;
 
-    --muted: 215 20% 95%;
-    --muted-foreground: 220 5% 50%;
+    --muted: 42 20% 88%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 215 20% 92%;
-    --accent-foreground: 220 9% 20%;
+    --accent: 40 25% 85%;
+    --accent-foreground: 0 0% 8%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 45 25% 94%;
 
-    --border: 215 20% 88%;
-    --input: 215 20% 95%;
-    --ring: 215 85% 55%;
+    --border: 40 20% 80%;
+    --input: 42 20% 88%;
+    --ring: 0 0% 15%;
 
     --radius: 0.25rem;
 
-    /* Scrabble-specific colors (converted from your hex values) */
-    --board-background: 218 18% 97%; /* #F6F7F8 */
-    --board-border: 215 20% 88%;
-    --tile-background: 0 0% 100%; /* #FFFFFF */
-    --tile-text: 220 9% 20%;
+    /* Scrabble-specific colors for yellowish paper theme */
+    --board-background: 45 25% 94%; /* Yellowish paper */
+    --board-border: 0 0% 15%; /* Dark borders */
+    --tile-background: 43 30% 96%; /* Slightly warmer tiles */
+    --tile-text: 0 0% 8%; /* Black text on tiles */
     
-    /* Special squares - exact hex to HSL conversions */
-    --double-letter: 200 100% 76%; /* #85DAFF */
-    --triple-letter: 200 100% 28%; /* #00648F */
-    --double-word: 0 100% 71%; /* #FF7070 */
-    --triple-word: 0 100% 56%; /* #FF1F1F */
-    --star: 45 100% 50%;
+    /* Special squares with paper theme */
+    --double-letter: 200 45% 70%; /* Muted blue */
+    --triple-letter: 200 60% 35%; /* Darker blue */
+    --double-word: 15 45% 65%; /* Muted red-orange */
+    --triple-word: 15 60% 50%; /* Deeper red-orange */
+    --star: 45 60% 55%; /* Golden star */
 
-    --sidebar-background: 210 11% 6%;
-    --sidebar-foreground: 210 11% 71%;
-    --sidebar-primary: 142 69% 58%;
-    --sidebar-primary-foreground: 210 11% 15%;
-    --sidebar-accent: 210 11% 12%;
-    --sidebar-accent-foreground: 210 11% 71%;
-    --sidebar-border: 210 11% 12%;
-    --sidebar-ring: 142 69% 58%;
+    --sidebar-background: 0 0% 15%; /* Dark charcoal sidebar */
+    --sidebar-foreground: 45 25% 94%; /* Light yellowish text */
+    --sidebar-primary: 45 60% 55%; /* Golden primary */
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 25%; /* Lighter charcoal for accents */
+    --sidebar-accent-foreground: 45 25% 94%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 45 60% 55%;
   }
 
   .dark {
@@ -110,6 +110,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-['Inter'] antialiased;
-    background-color: #F6F7F8; /* Fixed background color as specified */
+    background-color: hsl(45, 25%, 94%); /* Yellowish paper background */
   }
 }

@@ -16,12 +16,6 @@ import {
 
 const items = [
   { title: "Home", url: "/", icon: Home },
-  { title: "Gioca", url: "/play", icon: Play },
-  { title: "Partite Online", url: "/online", icon: Users },
-  { title: "Statistiche", url: "/stats", icon: BarChart3 },
-  { title: "Tornei", url: "/tournaments", icon: Trophy },
-  { title: "Dizionario", url: "/dictionary", icon: BookOpen },
-  { title: "Impostazioni", url: "/settings", icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -42,13 +36,13 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-4 border-b border-sidebar-border">
           <h1 className={`font-bold ${collapsed ? "text-center text-sm" : "text-xl"}`}>
-            {collapsed ? "S" : "Scarabeo"}
+            {collapsed ? "S" : "Scrabble Online"}
           </h1>
         </div>
 
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Menu Principale
+            Main Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
