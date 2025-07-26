@@ -289,6 +289,40 @@ export const useGame = () => {
     })
   }, [])
 
+  const resetGame = useCallback(() => {
+    const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
+    const player1Tiles = drawTiles(shuffledBag, 7)
+    const player2Tiles = drawTiles(player1Tiles.remaining, 7)
+    
+    const gameMode = difficulty ? 'bot' : 'human'
+    
+    setGameState({
+      board: new Map(),
+      players: [
+        {
+          id: 'player1',
+          name: 'You',
+          score: 0,
+          rack: player1Tiles.drawn,
+          isBot: false
+        },
+        {
+          id: 'player2',
+          name: difficulty ? `Bot (${difficulty})` : 'Player 2',
+          score: 0,
+          rack: player2Tiles.drawn,
+          isBot: !!difficulty
+        }
+      ],
+      currentPlayerIndex: 0,
+      tileBag: player2Tiles.remaining,
+      gameStatus: 'playing',
+      gameMode,
+      passCount: 0
+    })
+    setPendingTiles([])
+  }, [difficulty])
+
   // Bot move logic
   const makeBotMove = useCallback(async () => {
     if (!difficulty || !generateAllPossibleMoves || !selectBestMove) return
@@ -384,39 +418,12 @@ export const useGame = () => {
     }
   }, [gameState.currentPlayerIndex, gameState.gameStatus, makeBotMove, isBotTurn])
 
-  const resetGame = useCallback(() => {
-    const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
-    const player1Tiles = drawTiles(shuffledBag, 7)
-    const player2Tiles = drawTiles(player1Tiles.remaining, 7)
-    
-    const gameMode = difficulty ? 'bot' : 'human'
-    
-    setGameState({
-      board: new Map(),
-      players: [
-        {
-          id: 'player1',
-          name: 'You',
-          score: 0,
-          rack: player1Tiles.drawn,
-          isBot: false
-        },
-        {
-          id: 'player2',
-          name: difficulty ? `Bot (${difficulty})` : 'Player 2',
-          score: 0,
-          rack: player2Tiles.drawn,
-          isBot: !!difficulty
-        }
-      ],
-      currentPlayerIndex: 0,
-      tileBag: player2Tiles.remaining,
-      gameStatus: 'playing',
-      gameMode,
-      passCount: 0
-    })
-    setPendingTiles([])
-  }, [difficulty])
+  // Effect to reset game when difficulty changes
+  useEffect(() => {
+    if (difficulty) {
+      resetGame()
+    }
+  }, [difficulty, resetGame])
 
   return {
     gameState,
