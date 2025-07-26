@@ -18,7 +18,7 @@ export const validateMove = (
   if (newTiles.length === 0) {
     return {
       isValid: false,
-      errors: ['Devi piazzare almeno una tessera'],
+      errors: ['You must place at least one tile'],
       words: [],
       score: 0
     }
@@ -26,17 +26,17 @@ export const validateMove = (
   
   // Check if tiles are placed in a single row or column
   if (!aretilesInLine(newTiles)) {
-    errors.push('Le tessere devono essere piazzate in una singola riga o colonna')
+    errors.push('Tiles must be placed in a single row or column')
   }
   
   // Check if tiles are adjacent to existing tiles (except first move)
   if (board.size > 0 && !areNewTilesAdjacent(board, newTiles)) {
-    errors.push('Le nuove tessere devono essere adiacenti a tessere già piazzate')
+    errors.push('New tiles must be adjacent to existing tiles')
   }
   
   // Check if first move covers center square
   if (board.size === 0 && !coversCenter(newTiles)) {
-    errors.push('La prima mossa deve coprire la casella centrale')
+    errors.push('First move must cover the center square')
   }
   
   // Find all words formed by this move
@@ -46,12 +46,12 @@ export const validateMove = (
   // Validate all words in dictionary
   const { invalid } = validateWords(wordStrings)
   if (invalid.length > 0) {
-    errors.push(`Parole non valide: ${invalid.join(', ')}`)
+    errors.push(`Invalid words: ${invalid.join(', ')}`)
   }
   
   // Check if at least one word is formed
   if (allWords.length === 0) {
-    errors.push('Devi formare almeno una parola')
+    errors.push('You must form at least one word')
   }
   
   return {

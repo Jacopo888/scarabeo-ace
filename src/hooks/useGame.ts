@@ -33,13 +33,13 @@ export const useGame = () => {
       players: [
         {
           id: 'player1',
-          name: 'Giocatore 1',
+          name: 'Player 1',
           score: 0,
           rack: player1Tiles.drawn
         },
         {
           id: 'player2', 
-          name: 'Giocatore 2',
+          name: 'Player 2',
           score: 0,
           rack: player2Tiles.drawn
         }
@@ -87,8 +87,8 @@ export const useGame = () => {
   const confirmMove = useCallback(() => {
     if (pendingTiles.length === 0) {
       toast({
-        title: "Errore",
-        description: "Nessuna tessera da confermare",
+        title: "Error",
+        description: "No tiles to confirm",
         variant: "destructive"
       })
       return
@@ -100,7 +100,7 @@ export const useGame = () => {
       
       if (!validation.isValid) {
         toast({
-          title: "Mossa non valida",
+          title: "Invalid move",
           description: validation.errors.join(', '),
           variant: "destructive"
         })
@@ -130,8 +130,8 @@ export const useGame = () => {
       setPendingTiles([])
       
       toast({
-        title: "Mossa confermata!",
-        description: `+${score} punti per le parole: ${words.map(w => w.word).join(', ')}`,
+        title: "Move confirmed!",
+        description: `+${score} points for words: ${words.map(w => w.word).join(', ')}`,
       })
       
       return {
@@ -203,13 +203,13 @@ export const useGame = () => {
       players: [
         {
           id: 'player1',
-          name: 'Giocatore 1', 
+          name: 'Player 1', 
           score: 0,
           rack: player1Tiles.drawn
         },
         {
           id: 'player2',
-          name: 'Giocatore 2',
+          name: 'Player 2',
           score: 0, 
           rack: player2Tiles.drawn
         }

@@ -22,7 +22,7 @@ const App = () => (
             <div className="flex-1 flex flex-col">
               <header className="h-14 border-b border-border flex items-center px-4">
                 <SidebarTrigger />
-                <h2 className="ml-4 text-lg font-semibold">Scarabeo Online</h2>
+                <h2 className="ml-4 text-lg font-semibold">Scrabble Online</h2>
               </header>
               <main className="flex-1 overflow-auto">
                 <Routes>

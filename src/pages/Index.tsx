@@ -4,6 +4,7 @@ import { ScrabbleBoard } from "@/components/ScrabbleBoard"
 import { TileRack } from "@/components/TileRack"
 import { GameProvider, useGameContext } from "@/contexts/GameContext"
 import { Button } from "@/components/ui/button"
+import { GameFlow } from "@/components/GameFlow"
 
 const GameContent = () => {
   const { gameState, pendingTiles, placeTile, confirmMove, cancelMove, endTurn, resetGame, currentPlayer } = useGameContext()
@@ -14,9 +15,9 @@ const GameContent = () => {
         {/* Colonna principale - Board e controlli di gioco */}
         <div className="lg:col-span-2 space-y-6">
           <div className="text-center">
-            <h1 className="text-3xl font-bold mb-2">Benvenuto in Scarabeo Online</h1>
+            <h1 className="text-3xl font-bold mb-2">Welcome to Scrabble Online</h1>
             <p className="text-muted-foreground">
-              Il miglior sito per giocare a Scrabble online con motore di analisi avanzato
+              The best place to play Scrabble online with advanced analysis
             </p>
           </div>
 
@@ -25,32 +26,32 @@ const GameContent = () => {
             {pendingTiles.length > 0 && (
               <>
                 <Button onClick={confirmMove} variant="default">
-                  Conferma Mossa ({pendingTiles.length} tessere)
+                  Confirm Move ({pendingTiles.length} tiles)
                 </Button>
                 <Button onClick={cancelMove} variant="outline">
-                  Annulla
+                  Cancel
                 </Button>
               </>
             )}
             <Button onClick={endTurn} variant="outline" disabled={pendingTiles.length > 0}>
-              Termina Turno
+              End Turn
             </Button>
             <Button onClick={resetGame} variant="outline">
-              Nuova Partita
+              New Game
             </Button>
           </div>
 
           <div className="text-center">
             <p className="text-lg font-medium">
-              Turno di: {currentPlayer.name} (Punteggio: {currentPlayer.score})
+              Turn: {currentPlayer.name} (Score: {currentPlayer.score})
             </p>
             <p className="text-sm text-muted-foreground">
-              Tessere rimanenti: {gameState.tileBag.length}
+              Tiles remaining: {gameState.tileBag.length}
             </p>
           </div>
 
           <div className="bg-card p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-center">Board di Gioco</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">Game Board</h2>
             <div className="flex justify-center">
               <ScrabbleBoard 
                 placedTiles={gameState.board}
@@ -69,7 +70,7 @@ const GameContent = () => {
           <GameStats />
           
           <div className="bg-card p-4 rounded-lg shadow-lg">
-            <h3 className="font-semibold mb-3">Giocatori</h3>
+            <h3 className="font-semibold mb-3">Players</h3>
             <div className="space-y-2 text-sm">
               {gameState.players.map((player, index) => (
                 <div 
@@ -83,11 +84,11 @@ const GameContent = () => {
                   <div className="flex justify-between">
                     <span className="font-medium">{player.name}</span>
                     <span className={index === gameState.currentPlayerIndex ? 'text-primary' : 'text-muted-foreground'}>
-                      {index === gameState.currentPlayerIndex ? 'Turno attivo' : 'In attesa'}
+                      {index === gameState.currentPlayerIndex ? 'Active turn' : 'Waiting'}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Punteggio: {player.score} | Tessere: {player.rack.length}
+                    Score: {player.score} | Tiles: {player.rack.length}
                   </div>
                 </div>
               ))}
@@ -95,22 +96,24 @@ const GameContent = () => {
           </div>
 
           <div className="bg-card p-4 rounded-lg shadow-lg">
-            <h3 className="font-semibold mb-3">Stato Partita</h3>
+            <h3 className="font-semibold mb-3">Game Status</h3>
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
                 <span>Status:</span>
                 <span className="font-medium capitalize">{gameState.gameStatus}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tessere nella borsa:</span>
+                <span>Tiles in bag:</span>
                 <span>{gameState.tileBag.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tessere giocate:</span>
+                <span>Tiles played:</span>
                 <span>{gameState.board.size}</span>
-              </div>
             </div>
           </div>
+
+          <GameFlow />
+        </div>
         </div>
       </div>
     </div>
