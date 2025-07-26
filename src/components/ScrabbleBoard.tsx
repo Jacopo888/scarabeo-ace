@@ -69,11 +69,11 @@ interface PlacedTile {
 }
 
 interface ScrabbleBoardProps {
+  placedTiles?: Map<string, PlacedTile>
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
 }
 
-export const ScrabbleBoard = ({ onTilePlaced }: ScrabbleBoardProps = {}) => {
-  const [placedTiles, setPlacedTiles] = useState<Map<string, PlacedTile>>(new Map())
+export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     e.preventDefault()
@@ -91,7 +91,6 @@ export const ScrabbleBoard = ({ onTilePlaced }: ScrabbleBoardProps = {}) => {
           isBlank: data.tile.isBlank
         }
         
-        setPlacedTiles(prev => new Map(prev).set(key, newTile))
         onTilePlaced?.(row, col, newTile)
       }
     } catch (error) {

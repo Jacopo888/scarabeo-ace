@@ -2,18 +2,12 @@ import { PlayButtons } from "@/components/PlayButtons"
 import { GameStats } from "@/components/GameStats"
 import { ScrabbleBoard } from "@/components/ScrabbleBoard"
 import { TileRack } from "@/components/TileRack"
+import { GameProvider, useGameContext } from "@/contexts/GameContext"
+import { Button } from "@/components/ui/button"
 
-const mockTiles = [
-  { letter: "A", points: 1 },
-  { letter: "E", points: 1 },
-  { letter: "R", points: 1 },
-  { letter: "T", points: 1 },
-  { letter: "O", points: 1 },
-  { letter: "N", points: 1 },
-  { letter: "S", points: 1 },
-]
+const GameContent = () => {
+  const { gameState, placeTile, endTurn, resetGame, currentPlayer } = useGameContext()
 
-const Index = () => {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -26,15 +20,35 @@ const Index = () => {
             </p>
           </div>
 
-          <PlayButtons />
+          <div className="flex justify-center gap-4">
+            <PlayButtons />
+            <Button onClick={endTurn} variant="outline">
+              Termina Turno
+            </Button>
+            <Button onClick={resetGame} variant="outline">
+              Nuova Partita
+            </Button>
+          </div>
+
+          <div className="text-center">
+            <p className="text-lg font-medium">
+              Turno di: {currentPlayer.name} (Punteggio: {currentPlayer.score})
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Tessere rimanenti: {gameState.tileBag.length}
+            </p>
+          </div>
 
           <div className="bg-card p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-center">Board di Gioco</h2>
             <div className="flex justify-center">
-              <ScrabbleBoard />
+              <ScrabbleBoard 
+                placedTiles={gameState.board}
+                onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
+              />
             </div>
             <div className="mt-6">
-              <TileRack tiles={mockTiles} />
+              <TileRack tiles={currentPlayer.rack} />
             </div>
           </div>
         </div>
@@ -44,39 +58,59 @@ const Index = () => {
           <GameStats />
           
           <div className="bg-card p-4 rounded-lg shadow-lg">
-            <h3 className="font-semibold mb-3">Partite Attive</h3>
+            <h3 className="font-semibold mb-3">Giocatori</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>vs. GiocatoreXYZ</span>
-                <span className="text-primary">Il tuo turno</span>
-              </div>
-              <div className="flex justify-between">
-                <span>vs. Bot Difficile</span>
-                <span className="text-muted-foreground">Suo turno</span>
-              </div>
+              {gameState.players.map((player, index) => (
+                <div 
+                  key={player.id}
+                  className={`p-2 rounded ${
+                    index === gameState.currentPlayerIndex 
+                      ? 'bg-primary/10 border border-primary' 
+                      : 'bg-secondary'
+                  }`}
+                >
+                  <div className="flex justify-between">
+                    <span className="font-medium">{player.name}</span>
+                    <span className={index === gameState.currentPlayerIndex ? 'text-primary' : 'text-muted-foreground'}>
+                      {index === gameState.currentPlayerIndex ? 'Turno attivo' : 'In attesa'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Punteggio: {player.score} | Tessere: {player.rack.length}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="bg-card p-4 rounded-lg shadow-lg">
-            <h3 className="font-semibold mb-3">Ultima Partita</h3>
+            <h3 className="font-semibold mb-3">Stato Partita</h3>
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
-                <span>vs. Bot Medio</span>
-                <span className="text-primary font-medium">Vittoria</span>
+                <span>Status:</span>
+                <span className="font-medium capitalize">{gameState.gameStatus}</span>
               </div>
               <div className="flex justify-between">
-                <span>Punteggio:</span>
-                <span>342 - 289</span>
+                <span>Tessere nella borsa:</span>
+                <span>{gameState.tileBag.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Precisione:</span>
-                <span>87%</span>
+                <span>Tessere giocate:</span>
+                <span>{gameState.board.size}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+const Index = () => {
+  return (
+    <GameProvider>
+      <GameContent />
+    </GameProvider>
   );
 };
 
