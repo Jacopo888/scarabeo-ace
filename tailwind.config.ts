@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			gridTemplateColumns: {
+				'15': 'repeat(15, minmax(0, 1fr))',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -61,7 +64,21 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Scrabble-specific colors
+				board: {
+					DEFAULT: 'hsl(var(--board-background))',
+					border: 'hsl(var(--board-border))'
+				},
+				tile: {
+					DEFAULT: 'hsl(var(--tile-background))',
+					text: 'hsl(var(--tile-text))'
+				},
+				'double-letter': 'hsl(var(--double-letter))',
+				'triple-letter': 'hsl(var(--triple-letter))',
+				'double-word': 'hsl(var(--double-word))',
+				'triple-word': 'hsl(var(--triple-word))',
+				star: 'hsl(var(--star))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
