@@ -413,10 +413,19 @@ export const useGame = () => {
   // Effect to handle bot turns
   useEffect(() => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex]
+    console.log('Bot turn check:', {
+      currentPlayer: currentPlayer?.name,
+      isBot: currentPlayer?.isBot,
+      gameStatus: gameState.gameStatus,
+      isBotTurn,
+      difficulty
+    })
+    
     if (currentPlayer?.isBot && gameState.gameStatus === 'playing' && !isBotTurn) {
+      console.log('Bot should make move now!')
       makeBotMove()
     }
-  }, [gameState.currentPlayerIndex, gameState.gameStatus, makeBotMove, isBotTurn])
+  }, [gameState.currentPlayerIndex, gameState.gameStatus, makeBotMove, isBotTurn, difficulty])
 
   // Effect to reset game when difficulty changes
   useEffect(() => {
