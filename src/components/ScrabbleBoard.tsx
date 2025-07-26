@@ -41,11 +41,11 @@ const SPECIAL_SQUARES = {
 const getSquareColor = (type: string) => {
   switch (type) {
     case "TW": return "bg-triple-word text-white"
-    case "DW": return "bg-double-word text-white"
+    case "DW": return "bg-double-word text-white" 
     case "TL": return "bg-triple-letter text-white"
     case "DL": return "bg-double-letter text-white"
     case "STAR": return "bg-star text-white"
-    default: return "bg-board border-board-border"
+    default: return "bg-tile border-board-border"
   }
 }
 
@@ -69,7 +69,7 @@ export const ScrabbleBoard = () => {
       <div
         key={key}
         className={cn(
-          "w-8 h-8 border border-gray-300 flex items-center justify-center text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity",
+          "w-9 h-9 border border-board-border flex items-center justify-center text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity rounded",
           getSquareColor(specialType || "")
         )}
       >
@@ -80,7 +80,7 @@ export const ScrabbleBoard = () => {
 
   return (
     <div className="bg-board p-4 rounded-lg shadow-lg">
-      <div className="grid grid-cols-15 gap-px bg-board-border p-2 rounded">
+      <div className="grid grid-cols-15 gap-0.5 bg-board-border p-2 rounded" style={{ width: 'fit-content' }}>
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
         )}

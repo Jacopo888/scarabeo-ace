@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,48 +10,49 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 11% 15%;
-    --foreground: 210 11% 71%;
+    /* Light theme - chess.com inspired */
+    --background: 218 18% 97%;
+    --foreground: 220 9% 20%;
 
-    --card: 210 11% 15%;
-    --card-foreground: 210 11% 71%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 9% 20%;
 
-    --popover: 210 11% 15%;
-    --popover-foreground: 210 11% 71%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 9% 20%;
 
-    --primary: 142 69% 58%;
-    --primary-foreground: 210 11% 15%;
+    --primary: 215 85% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 11% 21%;
-    --secondary-foreground: 210 11% 71%;
+    --secondary: 215 20% 95%;
+    --secondary-foreground: 220 9% 20%;
 
-    --muted: 210 11% 21%;
-    --muted-foreground: 210 6% 46%;
+    --muted: 215 20% 95%;
+    --muted-foreground: 220 5% 50%;
 
-    --accent: 142 69% 58%;
-    --accent-foreground: 210 11% 15%;
+    --accent: 215 20% 92%;
+    --accent-foreground: 220 9% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 11% 21%;
-    --input: 210 11% 21%;
-    --ring: 142 69% 58%;
+    --border: 215 20% 88%;
+    --input: 215 20% 95%;
+    --ring: 215 85% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    /* Scrabble board colors */
-    --board-background: 45 29% 97%;
-    --board-border: 210 11% 21%;
-    --tile-background: 45 29% 97%;
-    --tile-text: 210 11% 15%;
+    /* Scrabble-specific colors (converted from your hex values) */
+    --board-background: 218 18% 97%; /* #F6F7F8 */
+    --board-border: 215 20% 88%;
+    --tile-background: 0 0% 100%; /* #FFFFFF */
+    --tile-text: 220 9% 20%;
     
-    /* Special squares */
-    --double-letter: 190 100% 90%;
-    --triple-letter: 220 100% 85%;
-    --double-word: 350 100% 88%;
-    --triple-word: 0 100% 85%;
-    --star: 142 69% 58%;
+    /* Special squares - exact hex to HSL conversions */
+    --double-letter: 200 100% 76%; /* #85DAFF */
+    --triple-letter: 200 100% 28%; /* #00648F */
+    --double-word: 0 100% 71%; /* #FF7070 */
+    --triple-word: 0 100% 56%; /* #FF1F1F */
+    --star: 45 100% 50%;
 
     --sidebar-background: 210 11% 6%;
     --sidebar-foreground: 210 11% 71%;
@@ -106,6 +109,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-['Inter'] antialiased;
+    background-color: #F6F7F8; /* Fixed background color as specified */
   }
 }
