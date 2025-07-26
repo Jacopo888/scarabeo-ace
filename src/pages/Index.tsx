@@ -6,7 +6,7 @@ import { GameProvider, useGameContext } from "@/contexts/GameContext"
 import { Button } from "@/components/ui/button"
 
 const GameContent = () => {
-  const { gameState, placeTile, endTurn, resetGame, currentPlayer } = useGameContext()
+  const { gameState, pendingTiles, placeTile, confirmMove, cancelMove, endTurn, resetGame, currentPlayer } = useGameContext()
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -22,7 +22,17 @@ const GameContent = () => {
 
           <div className="flex justify-center gap-4">
             <PlayButtons />
-            <Button onClick={endTurn} variant="outline">
+            {pendingTiles.length > 0 && (
+              <>
+                <Button onClick={confirmMove} variant="default">
+                  Conferma Mossa ({pendingTiles.length} tessere)
+                </Button>
+                <Button onClick={cancelMove} variant="outline">
+                  Annulla
+                </Button>
+              </>
+            )}
+            <Button onClick={endTurn} variant="outline" disabled={pendingTiles.length > 0}>
               Termina Turno
             </Button>
             <Button onClick={resetGame} variant="outline">
@@ -44,6 +54,7 @@ const GameContent = () => {
             <div className="flex justify-center">
               <ScrabbleBoard 
                 placedTiles={gameState.board}
+                pendingTiles={pendingTiles}
                 onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
               />
             </div>

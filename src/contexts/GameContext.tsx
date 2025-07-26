@@ -1,10 +1,13 @@
 import { createContext, useContext, ReactNode } from 'react'
 import { useGame } from '@/hooks/useGame'
-import { GameState, Player, Tile } from '@/types/game'
+import { GameState, Player, Tile, PlacedTile } from '@/types/game'
 
 interface GameContextType {
   gameState: GameState
+  pendingTiles: PlacedTile[]
   placeTile: (row: number, col: number, tile: Tile) => void
+  confirmMove: () => void
+  cancelMove: () => void
   endTurn: () => void
   resetGame: () => void
   currentPlayer: Player

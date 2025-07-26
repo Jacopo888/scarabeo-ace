@@ -1,5 +1,9 @@
 import { useState, useCallback } from 'react'
 import { GameState, Player, Tile, PlacedTile, TILE_DISTRIBUTION } from '@/types/game'
+import { validateMove } from '@/utils/gameRules'
+import { findWordsOnBoard } from '@/utils/wordFinder'
+import { calculateMoveScore } from '@/utils/scoring'
+import { useToast } from '@/hooks/use-toast'
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array]
@@ -17,6 +21,8 @@ const drawTiles = (bag: Tile[], count: number): { drawn: Tile[], remaining: Tile
 }
 
 export const useGame = () => {
+  const { toast } = useToast()
+  const [pendingTiles, setPendingTiles] = useState<PlacedTile[]>([])
   const [gameState, setGameState] = useState<GameState>(() => {
     const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
     const player1Tiles = drawTiles(shuffledBag, 7)
@@ -50,9 +56,6 @@ export const useGame = () => {
     setGameState(prev => {
       if (prev.board.has(key)) return prev // Square already occupied
       
-      const newBoard = new Map(prev.board)
-      newBoard.set(key, { ...tile, row, col })
-      
       // Remove tile from current player's rack
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const tileIndex = currentPlayer.rack.findIndex(t => 
@@ -70,13 +73,96 @@ export const useGame = () => {
         rack: newRack
       }
       
+      // Add to pending tiles instead of board
+      const newTile: PlacedTile = { ...tile, row, col }
+      setPendingTiles(current => [...current, newTile])
+      
       return {
         ...prev,
-        board: newBoard,
         players: newPlayers
       }
     })
   }, [])
+
+  const confirmMove = useCallback(() => {
+    if (pendingTiles.length === 0) {
+      toast({
+        title: "Errore",
+        description: "Nessuna tessera da confermare",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setGameState(prev => {
+      // Validate the move
+      const validation = validateMove(prev.board, pendingTiles)
+      
+      if (!validation.isValid) {
+        toast({
+          title: "Mossa non valida",
+          description: validation.errors.join(', '),
+          variant: "destructive"
+        })
+        return prev
+      }
+
+      // Calculate score
+      const words = findWordsOnBoard(prev.board, pendingTiles)
+      const score = calculateMoveScore(words, pendingTiles)
+      
+      // Add tiles to board
+      const newBoard = new Map(prev.board)
+      pendingTiles.forEach(tile => {
+        const key = `${tile.row},${tile.col}`
+        newBoard.set(key, tile)
+      })
+      
+      // Update player score
+      const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const newPlayers = [...prev.players]
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        score: currentPlayer.score + score
+      }
+      
+      // Clear pending tiles
+      setPendingTiles([])
+      
+      toast({
+        title: "Mossa confermata!",
+        description: `+${score} punti per le parole: ${words.map(w => w.word).join(', ')}`,
+      })
+      
+      return {
+        ...prev,
+        board: newBoard,
+        players: newPlayers,
+        lastMove: pendingTiles
+      }
+    })
+  }, [pendingTiles, toast])
+
+  const cancelMove = useCallback(() => {
+    if (pendingTiles.length === 0) return
+    
+    setGameState(prev => {
+      // Return tiles to current player's rack
+      const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const newPlayers = [...prev.players]
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        rack: [...currentPlayer.rack, ...pendingTiles]
+      }
+      
+      setPendingTiles([])
+      
+      return {
+        ...prev,
+        players: newPlayers
+      }
+    })
+  }, [pendingTiles])
 
   const endTurn = useCallback(() => {
     setGameState(prev => {
@@ -136,7 +222,10 @@ export const useGame = () => {
 
   return {
     gameState,
+    pendingTiles,
     placeTile,
+    confirmMove,
+    cancelMove,
     endTurn,
     resetGame,
     currentPlayer: gameState.players[gameState.currentPlayerIndex],

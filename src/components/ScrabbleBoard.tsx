@@ -62,25 +62,24 @@ const getSquareText = (type: string) => {
   }
 }
 
-interface PlacedTile {
-  letter: string
-  points: number
-  isBlank?: boolean
-}
+import { PlacedTile } from '@/types/game'
 
 interface ScrabbleBoardProps {
   placedTiles?: Map<string, PlacedTile>
+  pendingTiles?: PlacedTile[]
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
 }
 
-export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: ScrabbleBoardProps) => {
+export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTilePlaced }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     e.preventDefault()
     setDragOverSquare(null)
     
     const key = `${row},${col}`
-    if (placedTiles.has(key)) return // Square already occupied
+    if (placedTiles.has(key) || pendingTiles.some(t => t.row === row && t.col === col)) {
+      return // Square already occupied
+    }
     
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"))
@@ -88,7 +87,9 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: Scrabbl
         const newTile: PlacedTile = {
           letter: data.tile.letter,
           points: data.tile.points,
-          isBlank: data.tile.isBlank
+          isBlank: data.tile.isBlank,
+          row,
+          col
         }
         
         onTilePlaced?.(row, col, newTile)
@@ -99,7 +100,7 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: Scrabbl
   }
 
   const handleDragOver = (e: React.DragEvent, key: string) => {
-    if (!placedTiles.has(key)) {
+    if (!placedTiles.has(key) && !pendingTiles.some(t => `${t.row},${t.col}` === key)) {
       e.preventDefault()
       setDragOverSquare(key)
     }
@@ -113,6 +114,8 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: Scrabbl
     const key = `${row},${col}`
     const specialType = SPECIAL_SQUARES[key as keyof typeof SPECIAL_SQUARES]
     const placedTile = placedTiles.get(key)
+    const pendingTile = pendingTiles.find(t => t.row === row && t.col === col)
+    const currentTile = placedTile || pendingTile
     const isDragOver = dragOverSquare === key
     
     return (
@@ -121,20 +124,24 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), onTilePlaced }: Scrabbl
         className={cn(
           "w-9 h-9 border border-board-border flex items-center justify-center text-xs font-bold transition-all rounded relative",
           getSquareColor(specialType || ""),
-          !placedTile && "cursor-pointer",
-          isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10"
+          !currentTile && "cursor-pointer",
+          isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
+          pendingTile && "ring-2 ring-yellow-400 bg-yellow-100/20" // Highlight pending tiles
         )}
         onDrop={(e) => handleDrop(e, row, col)}
         onDragOver={(e) => handleDragOver(e, key)}
         onDragLeave={handleDragLeave}
       >
-        {placedTile ? (
+        {currentTile ? (
           <ScrabbleTile
-            letter={placedTile.letter}
-            points={placedTile.points}
-            isBlank={placedTile.isBlank}
+            letter={currentTile.letter}
+            points={currentTile.points}
+            isBlank={currentTile.isBlank}
             isOnBoard={true}
-            className="w-8 h-8 text-[10px]"
+            className={cn(
+              "w-8 h-8 text-[10px]",
+              pendingTile && "border-yellow-400 bg-yellow-50" // Style pending tiles differently
+            )}
           />
         ) : (
           getSquareText(specialType || "")
