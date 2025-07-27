@@ -30,9 +30,10 @@ export const useGame = () => {
     const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
     const player1Tiles = drawTiles(shuffledBag, 7)
     const player2Tiles = drawTiles(player1Tiles.remaining, 7)
-    
+
     const gameMode = difficulty ? 'bot' : 'human'
-    
+    const startingPlayerIndex = Math.floor(Math.random() * 2)
+
     return {
       board: new Map(),
       players: [
@@ -51,7 +52,7 @@ export const useGame = () => {
           isBot: !!difficulty
         }
       ],
-      currentPlayerIndex: 0,
+      currentPlayerIndex: startingPlayerIndex,
       tileBag: player2Tiles.remaining,
       gameStatus: 'playing',
       gameMode,
@@ -293,9 +294,10 @@ export const useGame = () => {
     const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
     const player1Tiles = drawTiles(shuffledBag, 7)
     const player2Tiles = drawTiles(player1Tiles.remaining, 7)
-    
+
     const gameMode = difficulty ? 'bot' : 'human'
-    
+    const startingPlayerIndex = Math.floor(Math.random() * 2)
+
     setGameState({
       board: new Map(),
       players: [
@@ -314,7 +316,7 @@ export const useGame = () => {
           isBot: !!difficulty
         }
       ],
-      currentPlayerIndex: 0,
+      currentPlayerIndex: startingPlayerIndex,
       tileBag: player2Tiles.remaining,
       gameStatus: 'playing',
       gameMode,
