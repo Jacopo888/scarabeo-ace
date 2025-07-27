@@ -103,11 +103,12 @@ const GameContent = () => {
 
           <div className="bg-card p-6 rounded-lg shadow-lg">
             <div className="flex justify-center">
-              <ScrabbleBoard 
+              <ScrabbleBoard
                 placedTiles={gameState.board}
                 pendingTiles={pendingTiles}
                 onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
                 onTilePickup={(row, col) => pickupTile(row, col)}
+                disabled={isBotTurn || currentPlayer.isBot}
               />
             </div>
             {!currentPlayer.isBot && (
