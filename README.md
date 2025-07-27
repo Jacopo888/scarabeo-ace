@@ -36,6 +36,14 @@ npm i
 npm run dev
 ```
 
+### Running tests
+
+Unit tests are executed with [Vitest](https://vitest.dev/):
+
+```sh
+npm test
+```
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
