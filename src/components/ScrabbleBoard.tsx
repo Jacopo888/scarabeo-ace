@@ -69,11 +69,19 @@ interface ScrabbleBoardProps {
   pendingTiles?: PlacedTile[]
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
   onTilePickup?: (row: number, col: number) => void
+  disabled?: boolean
 }
 
-export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTilePlaced, onTilePickup }: ScrabbleBoardProps) => {
+export const ScrabbleBoard = ({
+  placedTiles = new Map(),
+  pendingTiles = [],
+  onTilePlaced,
+  onTilePickup,
+  disabled = false
+}: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
+    if (disabled) return
     e.preventDefault()
     setDragOverSquare(null)
     
@@ -101,6 +109,7 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTi
   }
 
   const handleDragOver = (e: React.DragEvent, key: string) => {
+    if (disabled) return
     if (!placedTiles.has(key) && !pendingTiles.some(t => `${t.row},${t.col}` === key)) {
       e.preventDefault()
       setDragOverSquare(key)
@@ -136,6 +145,7 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTi
         {currentTile ? (
           <div
             onClick={() => {
+              if (disabled) return
               // Allow picking up pending tiles only
               if (pendingTile && onTilePickup) {
                 onTilePickup(row, col)
@@ -164,7 +174,12 @@ export const ScrabbleBoard = ({ placedTiles = new Map(), pendingTiles = [], onTi
   }
 
   return (
-    <div className="bg-board p-4 rounded-lg shadow-lg">
+    <div
+      className={cn(
+        "bg-board p-4 rounded-lg shadow-lg",
+        disabled && "opacity-50 pointer-events-none"
+      )}
+    >
       <div className="grid grid-cols-15 gap-0.5 bg-board-border p-2 rounded" style={{ width: 'fit-content' }}>
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
