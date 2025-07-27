@@ -98,20 +98,24 @@ export const useBot = () => {
   ): BotMove[] => {
     const moves: BotMove[] = []
     const adjacentPositions = new Set<string>()
-    
-    // Find all positions adjacent to existing tiles
+
+    // Find all orthogonally adjacent positions to existing tiles
+    const directions = [
+      [-1, 0], // up
+      [1, 0],  // down
+      [0, -1], // left
+      [0, 1]   // right
+    ] as const
+
     for (const [key] of board) {
       const [row, col] = key.split(',').map(Number)
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          if (dr === 0 && dc === 0) continue
-          const newRow = row + dr
-          const newCol = col + dc
-          if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
-            const newKey = `${newRow},${newCol}`
-            if (!board.has(newKey)) {
-              adjacentPositions.add(newKey)
-            }
+      for (const [dr, dc] of directions) {
+        const newRow = row + dr
+        const newCol = col + dc
+        if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+          const newKey = `${newRow},${newCol}`
+          if (!board.has(newKey)) {
+            adjacentPositions.add(newKey)
           }
         }
       }
