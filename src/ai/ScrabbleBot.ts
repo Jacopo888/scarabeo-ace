@@ -1,7 +1,7 @@
 import { GameState, Tile, PlacedTile } from '@/types/game'
-import { validateMove } from '@/utils/gameRules'
-import { findWordsOnBoard } from '@/utils/wordFinder'
-import { calculateMoveScore } from '@/utils/scoring'
+import { validateMoveLogic } from '@/utils/moveValidation'
+import { findNewWordsFormed } from '@/utils/newWordFinder'
+import { calculateNewMoveScore } from '@/utils/newScoring'
 import { Difficulty } from '@/components/DifficultyModal'
 
 export interface BotMove {
@@ -51,8 +51,13 @@ export class ScrabbleBot {
     // Filter valid moves and calculate composite scores
     return moves
       .filter(move => {
-        const validation = validateMove(board, move.tiles, this.isValidWordFn)
-        return validation.isValid
+        // First check move logic (placement rules)
+        const validation = validateMoveLogic(board, move.tiles)
+        if (!validation.isValid) return false
+        
+        // Then check if words are valid in dictionary
+        const newWords = findNewWordsFormed(board, move.tiles)
+        return newWords.length > 0 && newWords.every(w => this.isValidWordFn(w.word))
       })
       .map(move => this.calculateCompositeScore(move, playerRack))
   }
@@ -79,9 +84,9 @@ export class ScrabbleBot {
     const candidates = this.generateTileCombinations(rack, centerRow, centerCol, true)
     
     for (const candidate of candidates) {
-      const words = findWordsOnBoard(new Map(), candidate.tiles)
+      const words = findNewWordsFormed(new Map(), candidate.tiles)
       if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
-        const score = calculateMoveScore(words, candidate.tiles)
+        const score = calculateNewMoveScore(words, candidate.tiles)
         moves.push({
           tiles: candidate.tiles,
           score,
@@ -104,17 +109,25 @@ export class ScrabbleBot {
       const candidates = this.generateTileCombinations(rack, row, col, false)
       
       for (const candidate of candidates) {
-        const words = findWordsOnBoard(board, candidate.tiles)
-        if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
-          const score = calculateMoveScore(words, candidate.tiles)
-          moves.push({
-            tiles: candidate.tiles,
-            score,
-            words: words.map(w => w.word),
-            qualityScore: 0,
-            strategicScore: 0,
-            totalScore: 0
-          })
+        // Check that tiles don't overlap with existing board tiles
+        const hasOverlap = candidate.tiles.some(tile => {
+          const key = `${tile.row},${tile.col}`
+          return board.has(key)
+        })
+        
+        if (!hasOverlap) {
+          const words = findNewWordsFormed(board, candidate.tiles)
+          if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
+            const score = calculateNewMoveScore(words, candidate.tiles)
+            moves.push({
+              tiles: candidate.tiles,
+              score,
+              words: words.map(w => w.word),
+              qualityScore: 0,
+              strategicScore: 0,
+              totalScore: 0
+            })
+          }
         }
       }
     }

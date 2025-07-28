@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react'
 import { GameState, Player, Tile, PlacedTile, TILE_DISTRIBUTION } from '@/types/game'
-import { validateMove } from '@/utils/gameRules'
-import { findWordsOnBoard } from '@/utils/wordFinder'
-import { calculateMoveScore } from '@/utils/scoring'
+import { validateMoveLogic } from '@/utils/moveValidation'
+import { findNewWordsFormed } from '@/utils/newWordFinder'
+import { calculateNewMoveScore } from '@/utils/newScoring'
 import { useToast } from '@/hooks/use-toast'
 import { useBotContext } from '@/contexts/BotContext'
+import { useDictionary } from '@/contexts/DictionaryContext'
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array]
@@ -24,6 +25,7 @@ const drawTiles = (bag: Tile[], count: number): { drawn: Tile[], remaining: Tile
 export const useGame = () => {
   const { toast } = useToast()
   const { difficulty, makeBotMove: botMakeBotMove } = useBotContext()
+  const { isValidWord } = useDictionary()
   const [pendingTiles, setPendingTiles] = useState<PlacedTile[]>([])
   const [isBotTurn, setIsBotTurn] = useState(false)
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -132,8 +134,8 @@ export const useGame = () => {
     }
 
     setGameState(prev => {
-      // Validate the move
-      const validation = validateMove(prev.board, pendingTiles)
+      // Validate the move using new logic
+      const validation = validateMoveLogic(prev.board, pendingTiles)
       
       if (!validation.isValid) {
         toast({
@@ -144,9 +146,22 @@ export const useGame = () => {
         return prev
       }
 
-      // Calculate score
-      const words = findWordsOnBoard(prev.board, pendingTiles)
-      const score = calculateMoveScore(words, pendingTiles)
+      // Find only the new words formed by this move
+      const newWords = findNewWordsFormed(prev.board, pendingTiles)
+      
+      // Validate all new words in dictionary
+      const invalidWords = newWords.filter(word => !isValidWord(word.word))
+      if (invalidWords.length > 0) {
+        toast({
+          title: "Invalid words",
+          description: `Invalid words: ${invalidWords.map(w => w.word).join(', ')}`,
+          variant: "destructive"
+        })
+        return prev
+      }
+
+      // Calculate score only for new words
+      const score = calculateNewMoveScore(newWords, pendingTiles)
       
       // Add tiles to board
       const newBoard = new Map(prev.board)
@@ -155,12 +170,20 @@ export const useGame = () => {
         newBoard.set(key, tile)
       })
       
-      // Update player score
+      // Update player score and rack
       const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const tilesNeeded = 7 - currentPlayer.rack.length
+      
+      // Draw new tiles
+      const { drawn, remaining } = tilesNeeded > 0 && prev.tileBag.length > 0
+        ? drawTiles(prev.tileBag, Math.min(tilesNeeded, prev.tileBag.length))
+        : { drawn: [], remaining: prev.tileBag }
+      
       const newPlayers = [...prev.players]
       newPlayers[prev.currentPlayerIndex] = {
         ...currentPlayer,
-        score: currentPlayer.score + score
+        score: currentPlayer.score + score,
+        rack: [...currentPlayer.rack, ...drawn]
       }
       
       // Clear pending tiles
@@ -168,17 +191,21 @@ export const useGame = () => {
       
       toast({
         title: "Move confirmed!",
-        description: `+${score} points for words: ${words.map(w => w.word).join(', ')}`,
+        description: `+${score} points for words: ${newWords.map(w => w.word).join(', ')}`,
       })
       
+      // Automatically end turn after successful move
       return {
         ...prev,
         board: newBoard,
         players: newPlayers,
+        tileBag: remaining,
+        currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+        passCount: 0, // Reset pass count after a successful move
         lastMove: pendingTiles
       }
     })
-  }, [pendingTiles, toast])
+  }, [pendingTiles, toast, isValidWord])
 
   const cancelMove = useCallback(() => {
     if (pendingTiles.length === 0) return
