@@ -8,7 +8,6 @@ import { TileActions } from "@/components/TileActions"
 import { DictionaryLoader } from "@/components/DictionaryLoader"
 import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
-import { BotProvider } from "@/contexts/BotContext"
 
 const GameContent = () => {
   const { 
@@ -183,11 +182,9 @@ const GameContent = () => {
 
 const Game = () => {
   return (
-    <BotProvider>
-      <GameProvider>
-        <GameContent />
-      </GameProvider>
-    </BotProvider>
+    <GameProvider>
+      <GameContent />
+    </GameProvider>
   )
 }
 
