@@ -8,6 +8,8 @@ interface GameContextType {
   placeTile: (row: number, col: number, tile: Tile) => void
   pickupTile: (row: number, col: number) => void
   resetGame: () => void
+  confirmMove: () => void
+  cancelMove: () => void
   reshuffleTiles: () => void
   exchangeTiles: () => void
   passTurn: () => void
@@ -39,6 +41,8 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     pendingTiles,
     placeTile,
     pickupTile,
+    confirmMove,
+    cancelMove,
     resetGame,
     reshuffleTiles,
     exchangeTiles,
@@ -56,6 +60,8 @@ export const GameProvider = ({ children }: GameProviderProps) => {
         pendingTiles,
         placeTile,
         pickupTile,
+        confirmMove,
+        cancelMove,
         resetGame,
         reshuffleTiles,
         exchangeTiles,
