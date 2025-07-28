@@ -14,13 +14,235 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          board_state: Json
+          created_at: string | null
+          current_player_id: string
+          id: string
+          pass_count: number | null
+          player1_id: string
+          player1_rack: Json
+          player1_score: number | null
+          player2_id: string
+          player2_rack: Json
+          player2_score: number | null
+          status: string
+          tile_bag: Json
+          turn_deadline: string | null
+          turn_duration: string | null
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          board_state?: Json
+          created_at?: string | null
+          current_player_id: string
+          id?: string
+          pass_count?: number | null
+          player1_id: string
+          player1_rack?: Json
+          player1_score?: number | null
+          player2_id: string
+          player2_rack?: Json
+          player2_score?: number | null
+          status?: string
+          tile_bag?: Json
+          turn_deadline?: string | null
+          turn_duration?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          board_state?: Json
+          created_at?: string | null
+          current_player_id?: string
+          id?: string
+          pass_count?: number | null
+          player1_id?: string
+          player1_rack?: Json
+          player1_score?: number | null
+          player2_id?: string
+          player2_rack?: Json
+          player2_score?: number | null
+          status?: string
+          tile_bag?: Json
+          turn_deadline?: string | null
+          turn_duration?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_current_player_id_fkey"
+            columns: ["current_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matchmaking_queue: {
+        Row: {
+          created_at: string | null
+          id: string
+          preferred_duration: string
+          skill_level: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          preferred_duration: string
+          skill_level: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          preferred_duration?: string
+          skill_level?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matchmaking_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moves: {
+        Row: {
+          board_state_after: Json
+          created_at: string | null
+          game_id: string
+          id: string
+          move_type: string
+          player_id: string
+          rack_after: Json
+          score_earned: number | null
+          tiles_exchanged: Json | null
+          tiles_placed: Json | null
+          words_formed: Json | null
+        }
+        Insert: {
+          board_state_after: Json
+          created_at?: string | null
+          game_id: string
+          id?: string
+          move_type: string
+          player_id: string
+          rack_after: Json
+          score_earned?: number | null
+          tiles_exchanged?: Json | null
+          tiles_placed?: Json | null
+          words_formed?: Json | null
+        }
+        Update: {
+          board_state_after?: Json
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          move_type?: string
+          player_id?: string
+          rack_after?: Json
+          score_earned?: number | null
+          tiles_exchanged?: Json | null
+          tiles_placed?: Json | null
+          words_formed?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moves_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          games_played: number | null
+          games_won: number | null
+          id: string
+          preferred_game_duration: string | null
+          skill_level: number | null
+          total_score: number | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          games_played?: number | null
+          games_won?: number | null
+          id: string
+          preferred_game_duration?: string | null
+          skill_level?: number | null
+          total_score?: number | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          games_played?: number | null
+          games_won?: number | null
+          id?: string
+          preferred_game_duration?: string | null
+          skill_level?: number | null
+          total_score?: number | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_queue_entries: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
