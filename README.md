@@ -79,3 +79,7 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Blank tiles
+
+When you drag a blank tile onto the board a dialog will appear allowing you to choose which letter it represents. The chosen letter is displayed on the tile but the tile still scores `0` points and remains a blank tile. Picking the tile back up lets you choose again on the next placement.
