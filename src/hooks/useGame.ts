@@ -247,25 +247,32 @@ export const useGame = () => {
     })
   }, [])
 
-  const collectAllTiles = useCallback(() => {
-    if (pendingTiles.length === 0) return
-    
+  const exchangeTiles = useCallback(() => {
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const rackSize = currentPlayer.rack.length
+
+      if (prev.tileBag.length < rackSize) return prev
+
+      const bagWithReturned = shuffleArray([...prev.tileBag, ...currentPlayer.rack])
+      const { drawn, remaining } = drawTiles(bagWithReturned, rackSize)
+
       const newPlayers = [...prev.players]
       newPlayers[prev.currentPlayerIndex] = {
         ...currentPlayer,
-        rack: [...currentPlayer.rack, ...pendingTiles]
+        rack: drawn
       }
-      
-      setPendingTiles([])
-      
+
       return {
         ...prev,
-        players: newPlayers
+        players: newPlayers,
+        tileBag: remaining,
+        currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+        passCount: 0
       }
     })
-  }, [pendingTiles])
+  }, [])
+
 
   const passTurn = useCallback(() => {
     setGameState(prev => {
@@ -471,12 +478,9 @@ export const useGame = () => {
     pendingTiles,
     placeTile,
     pickupTile,
-    confirmMove,
-    cancelMove,
-    endTurn,
     resetGame,
     reshuffleTiles,
-    collectAllTiles,
+    exchangeTiles,
     passTurn,
     makeBotMove,
     isBotTurn,

@@ -7,12 +7,9 @@ interface GameContextType {
   pendingTiles: PlacedTile[]
   placeTile: (row: number, col: number, tile: Tile) => void
   pickupTile: (row: number, col: number) => void
-  confirmMove: () => void
-  cancelMove: () => void
-  endTurn: () => void
   resetGame: () => void
   reshuffleTiles: () => void
-  collectAllTiles: () => void
+  exchangeTiles: () => void
   passTurn: () => void
   makeBotMove: () => Promise<void>
   isBotTurn: boolean
@@ -36,9 +33,39 @@ interface GameProviderProps {
 
 export const GameProvider = ({ children }: GameProviderProps) => {
   const gameLogic = useGame()
-  
+
+  const {
+    gameState,
+    pendingTiles,
+    placeTile,
+    pickupTile,
+    resetGame,
+    reshuffleTiles,
+    exchangeTiles,
+    passTurn,
+    makeBotMove,
+    isBotTurn,
+    currentPlayer,
+    isCurrentPlayerTurn
+  } = gameLogic
+
   return (
-    <GameContext.Provider value={gameLogic}>
+    <GameContext.Provider
+      value={{
+        gameState,
+        pendingTiles,
+        placeTile,
+        pickupTile,
+        resetGame,
+        reshuffleTiles,
+        exchangeTiles,
+        passTurn,
+        makeBotMove,
+        isBotTurn,
+        currentPlayer,
+        isCurrentPlayerTurn
+      }}
+    >
       {children}
     </GameContext.Provider>
   )

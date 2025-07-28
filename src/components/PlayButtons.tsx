@@ -52,9 +52,6 @@ export const PlayButtons = () => {
             <CardHeader className="text-center">
               <Bot className="h-12 w-12 mx-auto text-primary mb-2 group-hover:scale-110 transition-transform" />
               <CardTitle>Gioca contro Computer</CardTitle>
-              <CardDescription>
-                Allena le tue abilità contro bot di crescente difficoltà
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" onClick={handleBotPlay}>
