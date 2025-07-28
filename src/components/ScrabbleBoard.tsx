@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import { ScrabbleTile } from "./ScrabbleTile"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { BlankTileDialog } from "./BlankTileDialog"
 
 // Definizioni delle caselle speciali
@@ -82,6 +82,22 @@ export const ScrabbleBoard = ({
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const [blankTileData, setBlankTileData] = useState<{ row: number; col: number; tile: PlacedTile } | null>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [boardScale, setBoardScale] = useState(1)
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (!boardRef.current) return
+      const boardWidth = boardRef.current.scrollWidth
+      const available = window.innerWidth - 32
+      const scale = Math.min(1, available / boardWidth)
+      setBoardScale(scale)
+    }
+
+    updateScale()
+    window.addEventListener('resize', updateScale)
+    return () => window.removeEventListener('resize', updateScale)
+  }, [])
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     if (disabled) return
     e.preventDefault()
@@ -182,11 +198,15 @@ export const ScrabbleBoard = ({
   return (
     <div
       className={cn(
-        "bg-board p-4 rounded-lg shadow-lg",
+        "bg-board p-4 rounded-lg shadow-lg max-w-full",
         disabled && "opacity-50 pointer-events-none"
       )}
     >
-      <div className="grid grid-cols-15 gap-0.5 bg-board-border p-2 rounded" style={{ width: 'fit-content' }}>
+      <div
+        ref={boardRef}
+        className="grid grid-cols-15 gap-0.5 bg-board-border p-2 rounded origin-top-left transition-transform"
+        style={{ width: 'fit-content', transform: `scale(${boardScale})` }}
+      >
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
         )}
