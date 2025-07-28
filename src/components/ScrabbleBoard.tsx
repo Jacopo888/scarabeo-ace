@@ -70,6 +70,7 @@ interface ScrabbleBoardProps {
   pendingTiles?: PlacedTile[]
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
   onTilePickup?: (row: number, col: number) => void
+  onEmptySquareClick?: (row: number, col: number) => void
   disabled?: boolean
 }
 
@@ -78,6 +79,7 @@ export const ScrabbleBoard = ({
   pendingTiles = [],
   onTilePlaced,
   onTilePickup,
+  onEmptySquareClick,
   disabled = false
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
@@ -147,6 +149,11 @@ export const ScrabbleBoard = ({
         onDrop={(e) => handleDrop(e, row, col)}
         onDragOver={(e) => handleDragOver(e, key)}
         onDragLeave={handleDragLeave}
+        onClick={() => {
+          if (!currentTile && !disabled) {
+            onEmptySquareClick?.(row, col)
+          }
+        }}
       >
         {currentTile ? (
           <div
