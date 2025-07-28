@@ -21,7 +21,7 @@ export const GameFlow = () => {
   const handlePass = useCallback(() => {
     setPassCount(prev => prev + 1)
     
-    // If both players pass twice, end game
+    // Game ends after each player has passed twice (four total passes)
     if (passCount >= 3) {
       // Game ends - calculate final scores
       return
