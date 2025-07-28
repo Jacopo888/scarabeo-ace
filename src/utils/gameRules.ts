@@ -25,7 +25,7 @@ export const validateMove = (
   }
   
   // Check if tiles are placed in a single row or column
-  if (!aretilesInLine(newTiles)) {
+  if (!areTilesInLine(newTiles)) {
     errors.push('Tiles must be placed in a single row or column')
   }
   
@@ -62,7 +62,7 @@ export const validateMove = (
   }
 }
 
-const aretilesInLine = (tiles: PlacedTile[]): boolean => {
+const areTilesInLine = (tiles: PlacedTile[]): boolean => {
   if (tiles.length <= 1) return true
   
   // Check if all tiles are in the same row
