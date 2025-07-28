@@ -7,13 +7,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Game from "./pages/Game";
+import MultiplayerGame from "./pages/MultiplayerGame";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Dictionary from "./pages/Dictionary";
 import NotFound from "./pages/NotFound";
 import { BotProvider } from "./contexts/BotContext";
 import { DictionaryProvider } from "./contexts/DictionaryContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { NotificationSystem } from "./components/NotificationSystem";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +26,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <DictionaryProvider>
-          <BotProvider>
+        <AuthProvider>
+          <DictionaryProvider>
+            <BotProvider>
             <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background">
               <AppSidebar />
@@ -32,12 +36,16 @@ const App = () => (
                 <header className="h-14 border-b border-border flex items-center px-4">
                   <SidebarTrigger />
                   <h2 className="ml-4 text-lg font-semibold">Scrabble Online</h2>
-                  <ThemeToggle />
+                  <div className="ml-auto flex items-center gap-2">
+                    <NotificationSystem />
+                    <ThemeToggle />
+                  </div>
                 </header>
                 <main className="flex-1 overflow-auto">
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/game" element={<Game />} />
+                    <Route path="/multiplayer-game/:gameId" element={<MultiplayerGame />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/dictionary" element={<Dictionary />} />
@@ -48,8 +56,9 @@ const App = () => (
               </div>
             </div>
             </SidebarProvider>
-          </BotProvider>
-        </DictionaryProvider>
+            </BotProvider>
+          </DictionaryProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
