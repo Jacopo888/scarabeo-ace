@@ -1,7 +1,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -21,21 +20,18 @@ const difficultyOptions = [
   {
     id: 'easy' as const,
     name: 'Easy',
-    description: 'Good for beginners. Makes basic moves and simple words.',
     stars: 1,
     color: 'bg-green-500'
   },
   {
     id: 'medium' as const,
-    name: 'Medium', 
-    description: 'Balanced gameplay. Uses strategic positioning and varied vocabulary.',
+    name: 'Medium',
     stars: 3,
     color: 'bg-yellow-500'
   },
   {
     id: 'hard' as const,
     name: 'Hard',
-    description: 'Expert level. Maximizes points with complex strategies and advanced words.',
     stars: 5,
     color: 'bg-red-500'
   }
@@ -50,9 +46,6 @@ export const DifficultyModal = ({ open, onOpenChange, onSelectDifficulty }: Diff
             <Bot className="h-5 w-5" />
             Choose Bot Difficulty
           </DialogTitle>
-          <DialogDescription>
-            Select the difficulty level for your computer opponent.
-          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -79,9 +72,6 @@ export const DifficultyModal = ({ open, onOpenChange, onSelectDifficulty }: Diff
                       </div>
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {option.description}
-                  </p>
                 </div>
               </div>
             </Button>
