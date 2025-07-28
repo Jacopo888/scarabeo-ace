@@ -11,6 +11,7 @@ import Dictionary from "./pages/Dictionary";
 import NotFound from "./pages/NotFound";
 import { BotProvider } from "./contexts/BotContext";
 import { DictionaryProvider } from "./contexts/DictionaryContext";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
                 <header className="h-14 border-b border-border flex items-center px-4">
                   <SidebarTrigger />
                   <h2 className="ml-4 text-lg font-semibold">Scrabble Online</h2>
+                  <ThemeToggle />
                 </header>
                 <main className="flex-1 overflow-auto">
                   <Routes>
