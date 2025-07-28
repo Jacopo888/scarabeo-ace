@@ -19,10 +19,11 @@ export const GameFlow = () => {
   const [passCount, setPassCount] = useState(0)
 
   const handlePass = useCallback(() => {
-    setPassCount(prev => prev + 1)
-    
-    // If both players pass twice, end game
-    if (passCount >= 3) {
+    const newCount = passCount + 1
+    setPassCount(newCount)
+
+    // If all players pass twice each (4 passes total), end game
+    if (newCount >= 4) {
       // Game ends - calculate final scores
       return
     }
@@ -142,7 +143,7 @@ export const GameFlow = () => {
         </div>
 
         {/* End Game Conditions */}
-        {(gameState.tileBag.length === 0 || passCount >= 3) && (
+        {(gameState.tileBag.length === 0 || passCount >= 4) && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm font-medium text-yellow-800">
               {gameState.tileBag.length === 0 
