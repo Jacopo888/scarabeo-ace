@@ -25,9 +25,12 @@ export const validateMoveLogic = (
       errors.push('Cannot place tile on occupied square')
     }
   }
-  
+
+  const contiguous = areNewTilesContiguous(newTiles)
+  const gapsFilled = areGapsFilledByExistingTiles(board, newTiles)
+
   // Check if tiles are contiguous
-  if (newTiles.length > 1 && !areNewTilesContiguous(newTiles)) {
+  if (newTiles.length > 1 && !contiguous && !gapsFilled) {
     errors.push('All new tiles must be adjacent to each other')
   }
   
@@ -47,7 +50,7 @@ export const validateMoveLogic = (
   }
   
   // Check if gaps are filled by existing tiles
-  if (!areGapsFilledByExistingTiles(board, newTiles)) {
+  if (!gapsFilled) {
     errors.push('Gaps between new tiles must be filled by existing tiles')
   }
   
