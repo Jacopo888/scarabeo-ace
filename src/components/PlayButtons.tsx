@@ -5,11 +5,13 @@ import { useState } from "react"
 import { DifficultyModal, Difficulty } from "@/components/DifficultyModal"
 import { useNavigate } from "react-router-dom"
 import { useBotContext } from "@/contexts/BotContext"
+import { useAuth } from "@/contexts/AuthContext"
 
 export const PlayButtons = () => {
   const [showDifficultyModal, setShowDifficultyModal] = useState(false)
   const navigate = useNavigate()
   const { setDifficulty } = useBotContext()
+  const { user } = useAuth()
   
   const handleBotPlay = () => {
     setShowDifficultyModal(true)
@@ -21,6 +23,10 @@ export const PlayButtons = () => {
   }
   
   const handleQuickMatch = () => {
+    if (!user) {
+      navigate('/auth')
+      return
+    }
     navigate('/game')
   }
   
