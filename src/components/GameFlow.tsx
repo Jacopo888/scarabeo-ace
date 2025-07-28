@@ -13,7 +13,7 @@ interface GameMove {
 }
 
 export const GameFlow = () => {
-  const { gameState, currentPlayer, endTurn } = useGameContext()
+  const { gameState, currentPlayer, passTurn } = useGameContext()
   const [gameHistory, setGameHistory] = useState<GameMove[]>([])
   const [turnNumber, setTurnNumber] = useState(1)
   const [passCount, setPassCount] = useState(0)
@@ -28,16 +28,16 @@ export const GameFlow = () => {
       return
     }
     
-    endTurn()
+    passTurn()
     setTurnNumber(prev => prev + 1)
-  }, [passCount, endTurn])
+  }, [passCount, passTurn])
 
   const handleExchange = useCallback(() => {
     // Exchange tiles logic would go here
-    endTurn()
+    passTurn()
     setTurnNumber(prev => prev + 1)
     setPassCount(0) // Reset pass count when a player makes an action
-  }, [endTurn])
+  }, [passTurn])
 
   const addMoveToHistory = useCallback((move: GameMove) => {
     setGameHistory(prev => [...prev, move])
