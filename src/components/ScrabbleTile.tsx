@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ScrabbleTileProps {
   letter: string
@@ -13,18 +14,19 @@ interface ScrabbleTileProps {
   className?: string
 }
 
-export const ScrabbleTile = ({ 
-  letter, 
-  points, 
-  isSelected = false, 
+export const ScrabbleTile = ({
+  letter,
+  points,
+  isSelected = false,
   isBlank = false,
   isOnBoard = false,
   isDragging = false,
   onSelect,
   onDragStart,
   onDragEnd,
-  className 
+  className
 }: ScrabbleTileProps) => {
+  const isMobile = useIsMobile()
   return (
     <div
       className={cn(
@@ -36,7 +38,7 @@ export const ScrabbleTile = ({
         isBlank && "bg-yellow-100",
         className
       )}
-      draggable={!isOnBoard}
+      draggable={!isOnBoard && !isMobile}
       onClick={onSelect}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
