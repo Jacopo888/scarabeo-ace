@@ -23,7 +23,7 @@ const drawTiles = (bag: Tile[], count: number): { drawn: Tile[], remaining: Tile
 
 export const useGame = () => {
   const { toast } = useToast()
-  const { difficulty, generateAllPossibleMoves, selectBestMove } = useBotContext()
+  const { difficulty, makeBotMove: botMakeBotMove } = useBotContext()
   const [pendingTiles, setPendingTiles] = useState<PlacedTile[]>([])
   const [isBotTurn, setIsBotTurn] = useState(false)
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -327,90 +327,91 @@ export const useGame = () => {
 
   // Bot move logic
   const makeBotMove = useCallback(async () => {
-    if (!difficulty || !generateAllPossibleMoves || !selectBestMove) return
+    if (!difficulty || !botMakeBotMove) return
     
     setIsBotTurn(true)
-    
-    // Simulate thinking time
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
     
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       if (!currentPlayer.isBot) return prev
       
-      try {
-        const possibleMoves = generateAllPossibleMoves(prev, currentPlayer.rack)
-        const bestMove = selectBestMove(possibleMoves, difficulty)
-        
+      // Start async bot move generation
+      botMakeBotMove(prev, currentPlayer.rack).then(bestMove => {
         if (!bestMove || bestMove.tiles.length === 0) {
           // Bot passes if no valid moves
           setIsBotTurn(false)
+          setGameState(prevState => ({
+            ...prevState,
+            currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
+            passCount: (prevState.passCount || 0) + 1
+          }))
+          return
+        }
+        
+        setGameState(prevState => {
+          // Place bot's tiles
+          const newBoard = new Map(prevState.board)
+          bestMove.tiles.forEach(tile => {
+            const key = `${tile.row},${tile.col}`
+            newBoard.set(key, tile)
+          })
+          
+          // Update bot's rack (remove used tiles)
+          const currentPlayer = prevState.players[prevState.currentPlayerIndex]
+          const newRack = [...currentPlayer.rack]
+          bestMove.tiles.forEach(usedTile => {
+            const tileIndex = newRack.findIndex(t => 
+              t.letter === usedTile.letter && t.points === usedTile.points
+            )
+            if (tileIndex !== -1) {
+              newRack.splice(tileIndex, 1)
+            }
+          })
+          
+          // Draw new tiles for bot
+          const tilesNeeded = 7 - newRack.length
+          const { drawn, remaining } = tilesNeeded > 0 && prevState.tileBag.length > 0
+            ? drawTiles(prevState.tileBag, Math.min(tilesNeeded, prevState.tileBag.length))
+            : { drawn: [], remaining: prevState.tileBag }
+          
+          const newPlayers = [...prevState.players]
+          newPlayers[prevState.currentPlayerIndex] = {
+            ...currentPlayer,
+            score: currentPlayer.score + bestMove.score,
+            rack: [...newRack, ...drawn]
+          }
+          
+          toast({
+            title: "Bot played!",
+            description: `Bot scored ${bestMove.score} points with: ${bestMove.words.join(', ')}`,
+          })
+          
+          setIsBotTurn(false)
+          
           return {
-            ...prev,
-            currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-            passCount: (prev.passCount || 0) + 1
-          }
-        }
-        
-        // Place bot's tiles
-        const newBoard = new Map(prev.board)
-        bestMove.tiles.forEach(tile => {
-          const key = `${tile.row},${tile.col}`
-          newBoard.set(key, tile)
-        })
-        
-        // Update bot's rack (remove used tiles)
-        const newRack = [...currentPlayer.rack]
-        bestMove.tiles.forEach(usedTile => {
-          const tileIndex = newRack.findIndex(t => 
-            t.letter === usedTile.letter && t.points === usedTile.points
-          )
-          if (tileIndex !== -1) {
-            newRack.splice(tileIndex, 1)
+            ...prevState,
+            board: newBoard,
+            players: newPlayers,
+            tileBag: remaining,
+            currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
+            passCount: 0,
+            lastMove: bestMove.tiles
           }
         })
-        
-        // Draw new tiles for bot
-        const tilesNeeded = 7 - newRack.length
-        const { drawn, remaining } = tilesNeeded > 0 && prev.tileBag.length > 0
-          ? drawTiles(prev.tileBag, Math.min(tilesNeeded, prev.tileBag.length))
-          : { drawn: [], remaining: prev.tileBag }
-        
-        const newPlayers = [...prev.players]
-        newPlayers[prev.currentPlayerIndex] = {
-          ...currentPlayer,
-          score: currentPlayer.score + bestMove.score,
-          rack: [...newRack, ...drawn]
-        }
-        
-        toast({
-          title: "Bot played!",
-          description: `Bot scored ${bestMove.score} points with: ${bestMove.words.join(', ')}`,
-        })
-        
-        setIsBotTurn(false)
-        
-        return {
-          ...prev,
-          board: newBoard,
-          players: newPlayers,
-          tileBag: remaining,
-          currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-          passCount: 0,
-          lastMove: bestMove.tiles
-        }
-      } catch (error) {
+      }).catch(error => {
         console.error('Bot move error:', error)
         setIsBotTurn(false)
         // Bot passes on error
-        return {
-          ...prev,
-          currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-          passCount: (prev.passCount || 0) + 1
-        }
-      }
+        setGameState(prevState => ({
+          ...prevState,
+          currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
+          passCount: (prevState.passCount || 0) + 1
+        }))
+      })
+      
+      return prev // Return current state while bot is thinking
     })
-  }, [difficulty, generateAllPossibleMoves, selectBestMove, toast])
+  }, [difficulty, botMakeBotMove, toast])
 
   // Effect to handle bot turns
   useEffect(() => {

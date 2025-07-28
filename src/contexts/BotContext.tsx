@@ -3,19 +3,16 @@ import { useBot } from '@/hooks/useBot'
 import { Difficulty } from '@/components/DifficultyModal'
 import { GameState, Tile } from '@/types/game'
 
-interface BotMove {
-  tiles: any[]
-  score: number
-  words: string[]
-}
+import { BotMove } from '@/ai/ScrabbleBot'
 
 interface BotContextType {
   difficulty: Difficulty | null
   setDifficulty: (difficulty: Difficulty) => void
-  makeBotMove: () => Promise<void>
+  makeBotMove: (gameState: GameState, playerRack: Tile[]) => Promise<BotMove | null>
   isBotThinking: boolean
   generateAllPossibleMoves: (gameState: GameState, playerRack: Tile[]) => BotMove[]
   selectBestMove: (moves: BotMove[], difficulty: Difficulty) => BotMove | null
+  canMakeMove: (gameState: GameState, playerRack: Tile[]) => boolean
 }
 
 const BotContext = createContext<BotContextType | undefined>(undefined)
