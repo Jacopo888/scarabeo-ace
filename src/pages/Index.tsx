@@ -1,6 +1,21 @@
 import { PlayButtons } from "@/components/PlayButtons"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Link } from "react-router-dom"
+import { Users, LogIn } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 const Index = () => {
+  const { user, profile, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
         <div className="text-center space-y-6">
@@ -13,6 +28,49 @@ const Index = () => {
           
           <div className="max-w-2xl mx-auto">
             <PlayButtons />
+          </div>
+
+          {/* Multiplayer Section */}
+          <div className="max-w-lg mx-auto">
+            {user && profile ? (
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-6 w-6" />
+                    Dashboard Multiplayer
+                  </CardTitle>
+                  <CardDescription>
+                    Gestisci le tue partite online e trova nuovi avversari
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link to="/dashboard">
+                    <Button className="w-full">
+                      Vai alla Dashboard
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LogIn className="h-6 w-6" />
+                    Accedi per Multiplayer
+                  </CardTitle>
+                  <CardDescription>
+                    Crea un account per giocare online
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link to="/auth">
+                    <Button className="w-full">
+                      Accedi / Registrati
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
           </div>
           
           <div className="max-w-3xl mx-auto text-center space-y-4">

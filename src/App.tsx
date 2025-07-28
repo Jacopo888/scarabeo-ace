@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Game from "./pages/Game";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import Dictionary from "./pages/Dictionary";
 import NotFound from "./pages/NotFound";
 import { BotProvider } from "./contexts/BotContext";
@@ -36,6 +38,8 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/game" element={<Game />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/dictionary" element={<Dictionary />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
