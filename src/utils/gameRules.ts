@@ -1,6 +1,5 @@
 import { PlacedTile } from '@/types/game'
 import { findWordsOnBoard } from './wordFinder'
-import { validateWords } from './dictionary'
 
 export interface MoveValidation {
   isValid: boolean
@@ -11,7 +10,8 @@ export interface MoveValidation {
 
 export const validateMove = (
   board: Map<string, PlacedTile>,
-  newTiles: PlacedTile[]
+  newTiles: PlacedTile[],
+  isValidWordFn?: (word: string) => boolean
 ): MoveValidation => {
   const errors: string[] = []
   
@@ -43,10 +43,12 @@ export const validateMove = (
   const allWords = findWordsOnBoard(board, newTiles)
   const wordStrings = allWords.map(w => w.word)
   
-  // Validate all words in dictionary
-  const { invalid } = validateWords(wordStrings)
-  if (invalid.length > 0) {
-    errors.push(`Invalid words: ${invalid.join(', ')}`)
+  // Validate all words in dictionary if validator provided
+  if (isValidWordFn) {
+    const invalidWords = wordStrings.filter(word => !isValidWordFn(word))
+    if (invalidWords.length > 0) {
+      errors.push(`Invalid words: ${invalidWords.join(', ')}`)
+    }
   }
   
   // Check if at least one word is formed

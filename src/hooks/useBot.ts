@@ -4,7 +4,7 @@ import { GameState, Tile, PlacedTile } from '@/types/game'
 import { validateMove } from '@/utils/gameRules'
 import { findWordsOnBoard } from '@/utils/wordFinder'
 import { calculateMoveScore } from '@/utils/scoring'
-import { checkWords } from '@/utils/dictionary'
+import { useDictionary } from '@/contexts/DictionaryContext'
 
 interface BotMove {
   tiles: PlacedTile[]
@@ -15,6 +15,7 @@ interface BotMove {
 export const useBot = () => {
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [isBotThinking, setIsBotThinking] = useState(false)
+  const { isValidWord, checkWords, isLoaded: isDictionaryLoaded } = useDictionary()
 
   const generateAllPossibleMoves = useCallback((
     gameState: GameState,
@@ -34,11 +35,8 @@ export const useBot = () => {
     }
     
     return moves.filter(move => {
-      const validation = validateMove(board, move.tiles)
-      if (!validation.isValid) return false
-      
-      const words = findWordsOnBoard(board, move.tiles)
-      return checkWords(words.map(w => w.word))
+      const validation = validateMove(board, move.tiles, isValidWord)
+      return validation.isValid && isDictionaryLoaded
     })
   }, [])
 
@@ -60,7 +58,7 @@ export const useBot = () => {
         
         if (tiles.some(t => t.row === centerRow && t.col === centerCol)) {
           const words = findWordsOnBoard(new Map(), tiles)
-          if (words.length > 0 && checkWords(words.map(w => w.word))) {
+          if (words.length > 0 && words.every(w => isValidWord(w.word))) {
             const score = calculateMoveScore(words, tiles)
             moves.push({ tiles, score, words: words.map(w => w.word) })
           }
@@ -81,7 +79,7 @@ export const useBot = () => {
         
         if (tiles.some(t => t.row === centerRow && t.col === centerCol)) {
           const words = findWordsOnBoard(new Map(), tiles)
-          if (words.length > 0 && checkWords(words.map(w => w.word))) {
+          if (words.length > 0 && words.every(w => isValidWord(w.word))) {
             const score = calculateMoveScore(words, tiles)
             moves.push({ tiles, score, words: words.map(w => w.word) })
           }
@@ -134,7 +132,7 @@ export const useBot = () => {
         }))
         
         const words = findWordsOnBoard(board, tiles)
-        if (words.length > 0 && checkWords(words.map(w => w.word))) {
+        if (words.length > 0 && words.every(w => isValidWord(w.word))) {
           const score = calculateMoveScore(words, tiles)
           moves.push({ tiles, score, words: words.map(w => w.word) })
         }
@@ -149,7 +147,7 @@ export const useBot = () => {
         }))
         
         const words = findWordsOnBoard(board, tiles)
-        if (words.length > 0 && checkWords(words.map(w => w.word))) {
+        if (words.length > 0 && words.every(w => isValidWord(w.word))) {
           const score = calculateMoveScore(words, tiles)
           moves.push({ tiles, score, words: words.map(w => w.word) })
         }
@@ -198,6 +196,7 @@ export const useBot = () => {
     makeBotMove,
     isBotThinking,
     generateAllPossibleMoves,
-    selectBestMove
+    selectBestMove,
+    isDictionaryLoaded
   }
 }
