@@ -7,8 +7,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Game from "./pages/Game";
+import Dictionary from "./pages/Dictionary";
 import NotFound from "./pages/NotFound";
 import { BotProvider } from "./contexts/BotContext";
+import { DictionaryProvider } from "./contexts/DictionaryContext";
 
 const queryClient = new QueryClient();
 
@@ -18,8 +20,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <BotProvider>
-          <SidebarProvider>
+        <DictionaryProvider>
+          <BotProvider>
+            <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background">
               <AppSidebar />
               <div className="flex-1 flex flex-col">
@@ -31,14 +34,16 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/game" element={<Game />} />
+                    <Route path="/dictionary" element={<Dictionary />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
               </div>
             </div>
-          </SidebarProvider>
-        </BotProvider>
+            </SidebarProvider>
+          </BotProvider>
+        </DictionaryProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
