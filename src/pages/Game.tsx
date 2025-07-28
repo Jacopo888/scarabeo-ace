@@ -9,11 +9,13 @@ import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 
 const GameContent = () => {
-  const { 
-    gameState, 
+  const {
+    gameState,
     pendingTiles,
     placeTile,
     pickupTile,
+    confirmMove,
+    cancelMove,
     resetGame,
     currentPlayer,
     reshuffleTiles,
@@ -57,7 +59,20 @@ const GameContent = () => {
             {!currentPlayer.isBot && (
               <div className="mt-6 space-y-4">
                 <TileRack tiles={currentPlayer.rack} />
-                <div className="flex justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    onClick={confirmMove}
+                    disabled={isBotTurn || pendingTiles.length === 0}
+                  >
+                    Confirm Move
+                  </Button>
+                  <Button
+                    onClick={cancelMove}
+                    variant="outline"
+                    disabled={isBotTurn || pendingTiles.length === 0}
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     onClick={passTurn}
                     variant="outline"
