@@ -15,4 +15,14 @@ describe('validateMoveLogic', () => {
     expect(result.isValid).toBe(true)
     expect(result.errors).not.toContain('All new tiles must be adjacent to each other')
   })
+
+  it('validates moves with blank tiles assigned a letter', () => {
+    const board = new Map<string, PlacedTile>()
+
+    const blankTile: PlacedTile = { row: 7, col: 7, letter: 'A', points: 0, isBlank: true }
+
+    const result = validateMoveLogic(board, [blankTile])
+
+    expect(result.isValid).toBe(true)
+  })
 })

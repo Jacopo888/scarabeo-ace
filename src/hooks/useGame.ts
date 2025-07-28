@@ -70,9 +70,10 @@ export const useGame = () => {
       
       // Remove tile from current player's rack
       const currentPlayer = prev.players[prev.currentPlayerIndex]
-      const tileIndex = currentPlayer.rack.findIndex(t => 
-        t.letter === tile.letter && t.points === tile.points && t.isBlank === tile.isBlank
-      )
+      const tileIndex = currentPlayer.rack.findIndex(t => {
+        if (tile.isBlank && t.isBlank) return true
+        return t.letter === tile.letter && t.points === tile.points && t.isBlank === tile.isBlank
+      })
       
       if (tileIndex === -1) return prev // Tile not found in rack
       
@@ -387,9 +388,10 @@ export const useGame = () => {
           const currentPlayer = prevState.players[prevState.currentPlayerIndex]
           const newRack = [...currentPlayer.rack]
           bestMove.tiles.forEach(usedTile => {
-            const tileIndex = newRack.findIndex(t => 
-              t.letter === usedTile.letter && t.points === usedTile.points
-            )
+            const tileIndex = newRack.findIndex(t => {
+              if (usedTile.isBlank && t.isBlank) return true
+              return t.letter === usedTile.letter && t.points === usedTile.points
+            })
             if (tileIndex !== -1) {
               newRack.splice(tileIndex, 1)
             }
