@@ -7,10 +7,11 @@ import { TileActions } from "@/components/TileActions"
 import { DictionaryLoader } from "@/components/DictionaryLoader"
 import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useState } from "react"
 
 const GameContent = () => {
-  const { 
-    gameState, 
+  const {
+    gameState,
     pendingTiles,
     placeTile,
     pickupTile,
@@ -21,6 +22,16 @@ const GameContent = () => {
     exchangeTiles,
     isBotTurn
   } = useGameContext()
+
+  const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+
+  const handleEmptySquareClick = (row: number, col: number) => {
+    if (selectedTileIndex === null) return
+    const tile = currentPlayer.rack[selectedTileIndex]
+    if (!tile) return
+    placeTile(row, col, tile)
+    setSelectedTileIndex(null)
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -43,6 +54,7 @@ const GameContent = () => {
                 pendingTiles={pendingTiles}
                 onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
                 onTilePickup={(row, col) => pickupTile(row, col)}
+                onEmptySquareClick={handleEmptySquareClick}
                 disabled={isBotTurn || currentPlayer.isBot}
               />
               <div className="absolute bottom-2 right-2 bg-secondary rounded p-2 text-sm shadow">
@@ -56,7 +68,13 @@ const GameContent = () => {
             </div>
             {!currentPlayer.isBot && (
               <div className="mt-6 space-y-4">
-                <TileRack tiles={currentPlayer.rack} />
+                <TileRack
+                  tiles={currentPlayer.rack}
+                  selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
+                  onTileSelect={(idx) =>
+                    setSelectedTileIndex(prev => (prev === idx ? null : idx))
+                  }
+                />
                 <div className="flex justify-center gap-2">
                   <Button
                     onClick={passTurn}
