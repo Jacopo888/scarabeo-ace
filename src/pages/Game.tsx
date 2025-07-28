@@ -15,6 +15,8 @@ const GameContent = () => {
     pendingTiles,
     placeTile,
     pickupTile,
+    confirmMove,
+    cancelMove,
     resetGame,
     currentPlayer,
     reshuffleTiles,
@@ -75,7 +77,20 @@ const GameContent = () => {
                     setSelectedTileIndex(prev => (prev === idx ? null : idx))
                   }
                 />
-                <div className="flex justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    onClick={confirmMove}
+                    disabled={isBotTurn || pendingTiles.length === 0}
+                  >
+                    Confirm Move
+                  </Button>
+                  <Button
+                    onClick={cancelMove}
+                    variant="outline"
+                    disabled={isBotTurn || pendingTiles.length === 0}
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     onClick={passTurn}
                     variant="outline"

@@ -478,6 +478,8 @@ export const useGame = () => {
     pendingTiles,
     placeTile,
     pickupTile,
+    confirmMove,
+    cancelMove,
     resetGame,
     reshuffleTiles,
     exchangeTiles,
