@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { ScrabbleTile } from "./ScrabbleTile"
 import { useState } from "react"
+import { BlankTileDialog } from "./BlankTileDialog"
 
 // Definizioni delle caselle speciali
 const SPECIAL_SQUARES = {
@@ -80,6 +81,7 @@ export const ScrabbleBoard = ({
   disabled = false
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
+  const [blankTileData, setBlankTileData] = useState<{ row: number; col: number; tile: PlacedTile } | null>(null)
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     if (disabled) return
     e.preventDefault()
@@ -100,8 +102,12 @@ export const ScrabbleBoard = ({
           row,
           col
         }
-        
-        onTilePlaced?.(row, col, newTile)
+
+        if (newTile.isBlank) {
+          setBlankTileData({ row, col, tile: newTile })
+        } else {
+          onTilePlaced?.(row, col, newTile)
+        }
       }
     } catch (error) {
       console.error("Failed to parse drop data:", error)
@@ -185,6 +191,21 @@ export const ScrabbleBoard = ({
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
         )}
       </div>
+      <BlankTileDialog
+        open={!!blankTileData}
+        onOpenChange={(open) => {
+          if (!open) setBlankTileData(null)
+        }}
+        onSelect={(letter) => {
+          if (blankTileData) {
+            onTilePlaced?.(blankTileData.row, blankTileData.col, {
+              ...blankTileData.tile,
+              letter,
+            })
+            setBlankTileData(null)
+          }
+        }}
+      />
     </div>
   )
 }
