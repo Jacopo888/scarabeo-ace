@@ -281,11 +281,12 @@ export const useGame = () => {
     setGameState(prev => {
       const newPassCount = (prev.passCount || 0) + 1
       
-      // End game if both players pass consecutively
-      if (newPassCount >= 2) {
+      // End game if all players pass twice each (4 passes total)
+      if (newPassCount >= 4) {
         return {
           ...prev,
-          gameStatus: 'finished'
+          gameStatus: 'finished',
+          passCount: newPassCount
         }
       }
       
