@@ -83,3 +83,7 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 ## Blank tiles
 
 When you drag a blank tile onto the board a dialog will appear allowing you to choose which letter it represents. The chosen letter is displayed on the tile but the tile still scores `0` points and remains a blank tile. Picking the tile back up lets you choose again on the next placement.
+
+## Multiplayer end game
+
+The multiplayer mode finishes once the tile bag is empty and a player has no tiles left. When this occurs the remaining tile values in each rack are subtracted from that player's score. See [docs/game_rules.md](docs/game_rules.md) for full details.

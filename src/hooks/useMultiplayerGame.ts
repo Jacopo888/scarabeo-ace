@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
 import { calculateNewMoveScore } from '@/utils/newScoring'
+import { canEndGame, calculateEndGamePenalty } from '@/utils/gameRules'
 import { useDictionary } from '@/contexts/DictionaryContext'
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -271,13 +272,44 @@ export const useMultiplayerGame = (gameId: string) => {
         updated_at: new Date().toISOString(),
       }
 
+      let player1RackAfter = isPlayer1 ? (newRack as any) : game.player1_rack
+      let player2RackAfter = isPlayer1 ? game.player2_rack : (newRack as any)
+
+      let player1ScoreAfter = game.player1_score
+      let player2ScoreAfter = game.player2_score
+
       if (isPlayer1) {
+        player1ScoreAfter += moveScore
         gameUpdate.player1_rack = newRack
-        gameUpdate.player1_score = game.player1_score + moveScore
       } else {
+        player2ScoreAfter += moveScore
         gameUpdate.player2_rack = newRack
-        gameUpdate.player2_score = game.player2_score + moveScore
       }
+
+      const endGame = canEndGame(
+        [
+          { rack: player1RackAfter as PlacedTile[] },
+          { rack: player2RackAfter as PlacedTile[] }
+        ],
+        remaining as PlacedTile[]
+      )
+
+      if (endGame) {
+        const p1Penalty = calculateEndGamePenalty(player1RackAfter as PlacedTile[])
+        const p2Penalty = calculateEndGamePenalty(player2RackAfter as PlacedTile[])
+        player1ScoreAfter -= p1Penalty
+        player2ScoreAfter -= p2Penalty
+        gameUpdate.status = 'completed'
+        gameUpdate.winner_id =
+          player1ScoreAfter > player2ScoreAfter
+            ? game.player1_id
+            : player2ScoreAfter > player1ScoreAfter
+              ? game.player2_id
+              : null
+      }
+
+      gameUpdate.player1_score = player1ScoreAfter
+      gameUpdate.player2_score = player2ScoreAfter
 
       // Update game in database
       const { error: gameError } = await supabase
