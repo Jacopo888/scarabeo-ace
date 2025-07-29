@@ -158,24 +158,28 @@ export const useMultiplayerGame = (gameId: string) => {
     try {
       setLoading(true)
 
-      // Convert pending tiles to board state
+      // Convert pending tiles to board state - using consistent key format
       const newBoardState = { ...game.board_state }
       pendingTiles.forEach(tile => {
-        const key = `${tile.row}-${tile.col}`
-        newBoardState[key] = { letter: tile.letter, points: tile.points }
+        const key = `${tile.row},${tile.col}` // Consistent with ScrabbleBoard
+        newBoardState[key] = { letter: tile.letter, points: tile.points, row: tile.row, col: tile.col }
       })
 
-      // Remove used tiles from rack
+      // Remove used tiles from rack more carefully to prevent duplicates
       const isPlayer1 = game.player1_id === user.id
-      const currentRack = isPlayer1 ? game.player1_rack : game.player2_rack
-      const usedLetters = pendingTiles.map(t => t.letter)
-      const newRack = currentRack.filter((tile: any, index: number) => {
-        const letterIndex = usedLetters.indexOf(tile.letter)
-        if (letterIndex !== -1) {
-          usedLetters.splice(letterIndex, 1)
-          return false
+      const currentRack = [...(isPlayer1 ? game.player1_rack : game.player2_rack)] as Tile[]
+      let newRack = [...currentRack]
+      
+      // Remove tiles by matching exact properties
+      pendingTiles.forEach(placedTile => {
+        const tileIndex = newRack.findIndex(rackTile => 
+          rackTile.letter === placedTile.letter && 
+          rackTile.points === placedTile.points &&
+          rackTile.isBlank === placedTile.isBlank
+        )
+        if (tileIndex !== -1) {
+          newRack.splice(tileIndex, 1)
         }
-        return true
       })
 
       // Calculate score (simplified)

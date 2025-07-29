@@ -93,7 +93,7 @@ export const ScrabbleBoard = ({
     const updateScale = () => {
       if (!boardRef.current) return
       const boardWidth = boardRef.current.scrollWidth
-      const available = window.innerWidth - 32
+      const available = window.innerWidth - 16 // Reduced padding
       const scale = Math.min(1, available / boardWidth)
       setBoardScale(scale)
     }
@@ -239,7 +239,7 @@ export const ScrabbleBoard = ({
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-0.5 bg-board-border p-2 rounded origin-top-left transition-transform"
+        className="grid grid-cols-15 gap-[1px] bg-board-border p-2 rounded origin-top-left transition-transform"
         style={{ width: 'fit-content', transform: `scale(${boardScale})` }}
       >
         {Array.from({ length: 15 }, (_, row) =>
