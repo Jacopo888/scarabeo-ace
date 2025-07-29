@@ -88,6 +88,7 @@ export const ScrabbleBoard = ({
   const [blankTileData, setBlankTileData] = useState<{ row: number; col: number; tile: PlacedTile } | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
   const [boardScale, setBoardScale] = useState(1)
+  const [hoverSquare, setHoverSquare] = useState<string | null>(null)
 
   useEffect(() => {
     const updateScale = () => {
@@ -188,11 +189,14 @@ export const ScrabbleBoard = ({
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
-          pendingTile && "ring-2 ring-yellow-400 bg-yellow-100/20" // Highlight pending tiles
+          pendingTile && "ring-2 ring-yellow-400 bg-yellow-100/20", // Highlight pending tiles
+          hoverSquare === key && "square-hover"
         )}
         onDrop={(e) => handleDrop(e, row, col)}
         onDragOver={(e) => handleDragOver(e, key)}
         onDragLeave={handleDragLeave}
+        onMouseEnter={() => setHoverSquare(key)}
+        onMouseLeave={() => setHoverSquare(null)}
         onClick={() => {
           if (!currentTile) {
             handleSquareClick(row, col)

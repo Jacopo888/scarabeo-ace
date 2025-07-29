@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { motion } from "framer-motion"
 
 interface ScrabbleTileProps {
   letter: string
@@ -30,10 +31,14 @@ export const ScrabbleTile = ({
   const displayLetter = isBlank && letter === '' ? '★' : letter
   const displayPoints = isBlank ? '★' : points
   return (
-    <div
+    <motion.div
+      layout
+      whileHover={!isOnBoard ? { y: -4, scale: 1.05 } : {}}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
         "w-12 h-12 bg-tile border-2 border-tile-text rounded-md flex flex-col items-center justify-center transition-all shadow-md select-none",
-        !isOnBoard && "cursor-grab hover:scale-105",
+        !isOnBoard && "cursor-grab",
         isOnBoard && "cursor-pointer",
         isSelected && "border-primary bg-primary/10",
         isDragging && "opacity-50 cursor-grabbing",
@@ -42,8 +47,8 @@ export const ScrabbleTile = ({
       )}
       draggable={!isOnBoard && !isMobile}
       onClick={onSelect}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
+      onDragStart={onDragStart as any}
+      onDragEnd={onDragEnd as any}
     >
       <span className="text-tile-text font-bold text-lg leading-none">
         {displayLetter}
@@ -51,6 +56,6 @@ export const ScrabbleTile = ({
       <span className="text-tile-text text-xs leading-none mt-px">
         {displayPoints}
       </span>
-    </div>
+    </motion.div>
   )
 }

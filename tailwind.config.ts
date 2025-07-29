@@ -17,7 +17,13 @@ export default {
 				'2xl': '1400px'
 			}
 		},
+		fontFamily: {
+			sans: ['Rubik', 'system-ui', 'sans-serif'],
+		},
 		extend: {
+			fontFamily: {
+				rubik: ['Rubik', 'system-ui', 'sans-serif'],
+			},
 			gridTemplateColumns: {
 				'15': 'repeat(15, minmax(0, 1fr))',
 			},

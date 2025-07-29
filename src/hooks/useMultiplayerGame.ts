@@ -129,7 +129,7 @@ export const useMultiplayerGame = (gameId: string) => {
       ([key, val]) => [
         key,
         {
-          ...val,
+          ...(val as any),
           isBlank:
             'isBlank' in (val as any)
               ? (val as any).isBlank
