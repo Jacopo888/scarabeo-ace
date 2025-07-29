@@ -240,12 +240,14 @@ export const useMultiplayerGame = (gameId: string) => {
       let newRack = [...currentRack]
 
       pendingTiles.forEach(placedTile => {
-        const tileIndex = newRack.findIndex(
-          rackTile =>
+        const tileIndex = newRack.findIndex(rackTile => {
+          if (placedTile.isBlank && rackTile.isBlank) return true
+          return (
             rackTile.letter === placedTile.letter &&
             rackTile.points === placedTile.points &&
             rackTile.isBlank === placedTile.isBlank
-        )
+          )
+        })
         if (tileIndex !== -1) {
           newRack.splice(tileIndex, 1)
         }
@@ -533,9 +535,14 @@ export const useMultiplayerGame = (gameId: string) => {
     // Remove tiles that are currently pending placement
     const rackCopy = [...baseRack]
     pendingTiles.forEach(tile => {
-      const index = rackCopy.findIndex(
-        r => r.letter === tile.letter && r.points === tile.points && r.isBlank === tile.isBlank
-      )
+      const index = rackCopy.findIndex(r => {
+        if (tile.isBlank && r.isBlank) return true
+        return (
+          r.letter === tile.letter &&
+          r.points === tile.points &&
+          r.isBlank === tile.isBlank
+        )
+      })
       if (index !== -1) rackCopy.splice(index, 1)
     })
 
