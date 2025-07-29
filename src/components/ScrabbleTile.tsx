@@ -27,6 +27,8 @@ export const ScrabbleTile = ({
   className
 }: ScrabbleTileProps) => {
   const isMobile = useIsMobile()
+  const displayLetter = isBlank && letter === '' ? '★' : letter
+  const displayPoints = isBlank ? '★' : points
   return (
     <div
       className={cn(
@@ -44,10 +46,10 @@ export const ScrabbleTile = ({
       onDragEnd={onDragEnd}
     >
       <span className="text-tile-text font-bold text-lg leading-none">
-        {letter}
+        {displayLetter}
       </span>
       <span className="text-tile-text text-xs leading-none mt-px">
-        {points}
+        {displayPoints}
       </span>
     </div>
   )

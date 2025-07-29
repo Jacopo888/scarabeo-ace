@@ -121,11 +121,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
           {/* Game Board */}
           <div className="lg:col-span-3">
             <Card>
-              <CardContent className="p-6 relative">
-                <TileCounter
-                  tileBag={game?.tile_bag || []}
-                  className="absolute bottom-0 right-0 w-20 text-xs"
-                />
+              <CardContent className="p-6">
                 <ScrabbleBoard
                   placedTiles={gameState.board}
                   onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
@@ -134,6 +130,12 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   selectedTile={selectedTile}
                   onUseSelectedTile={clearSelectedTile}
                 />
+                <div className="flex justify-end mt-4">
+                  <TileCounter
+                    tileBag={game?.tile_bag || []}
+                    className="w-20 text-xs"
+                  />
+                </div>
               </CardContent>
             </Card>
 
