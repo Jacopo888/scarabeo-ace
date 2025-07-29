@@ -58,7 +58,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('game_chats')
         .select('*')
         .eq('game_id', gameId)
@@ -79,7 +79,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
     try {
       setLoading(true)
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('game_chats')
         .insert({
           game_id: gameId,

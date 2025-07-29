@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_chats: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          message: string
+          player_id: string
+          player_name: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          message: string
+          player_id: string
+          player_name: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          message?: string
+          player_id?: string
+          player_name?: string
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           board_state: Json
