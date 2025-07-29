@@ -124,7 +124,7 @@ export const canEndGame = (
 ): boolean => {
   // Game ends when:
   // 1. A player uses all their tiles and the bag is empty
-  // 2. All players pass twice in a row
+  // 2. All players pass twice each (4 passes total)
   // 3. No more valid moves possible
   
   return tileBag.length === 0 && players.some(player => player.rack.length === 0)

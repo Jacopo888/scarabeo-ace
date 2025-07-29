@@ -22,12 +22,7 @@ export const GameFlow = () => {
     const newCount = passCount + 1
     setPassCount(newCount)
 
-    // If all players pass twice each (4 passes total), end game
-    if (newCount >= 4) {
-      // Game ends - calculate final scores
-      return
-    }
-    
+    // Game ends automatically after four consecutive passes
     passTurn()
     setTurnNumber(prev => prev + 1)
   }, [passCount, passTurn])
@@ -143,12 +138,12 @@ export const GameFlow = () => {
         </div>
 
         {/* End Game Conditions */}
-        {(gameState.tileBag.length === 0 || passCount >= 4) && (
+        {(gameState.tileBag.length === 0 || passCount >= 3) && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm font-medium text-yellow-800">
-              {gameState.tileBag.length === 0 
+              {gameState.tileBag.length === 0
                 ? "Game ending soon - no more tiles in bag!"
-                : "Game will end if all players pass again!"
+                : "Game will end if any player passes again!"
               }
             </p>
           </div>
