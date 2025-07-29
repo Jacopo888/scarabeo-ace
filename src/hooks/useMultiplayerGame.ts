@@ -268,6 +268,7 @@ export const useMultiplayerGame = (gameId: string) => {
         board_state: newBoardState,
         tile_bag: remaining,
         current_player_id: nextPlayerId,
+        pass_count: 0,
         updated_at: new Date().toISOString(),
       }
 
@@ -367,6 +368,7 @@ export const useMultiplayerGame = (gameId: string) => {
       const gameUpdate: any = {
         tile_bag: remaining,
         current_player_id: nextPlayerId,
+        pass_count: 0,
         updated_at: new Date().toISOString()
       }
 
@@ -423,13 +425,28 @@ export const useMultiplayerGame = (gameId: string) => {
         ? game.player2_id 
         : game.player1_id
 
+      const newPassCount = (game.pass_count || 0) + 1
+
+      const gameUpdate: any = {
+        current_player_id: nextPlayerId,
+        pass_count: newPassCount,
+        updated_at: new Date().toISOString()
+      }
+
+      if (newPassCount >= 4) {
+        gameUpdate.status = 'completed'
+        if (game.player1_score > game.player2_score) {
+          gameUpdate.winner_id = game.player1_id
+        } else if (game.player2_score > game.player1_score) {
+          gameUpdate.winner_id = game.player2_id
+        } else {
+          gameUpdate.winner_id = null
+        }
+      }
+
       await supabase
         .from('games')
-        .update({
-          current_player_id: nextPlayerId,
-          pass_count: (game.pass_count || 0) + 1,
-          updated_at: new Date().toISOString()
-        })
+        .update(gameUpdate)
         .eq('id', game.id)
 
       await supabase
