@@ -238,17 +238,22 @@ export const useMultiplayerGame = (gameId: string) => {
       const currentRack = [...(isPlayer1 ? game.player1_rack : game.player2_rack)] as Tile[]
       let newRack = [...currentRack]
 
-      pendingTiles.forEach(placedTile => {
-        const tileIndex = newRack.findIndex(
+    pendingTiles.forEach(placedTile => {
+      let tileIndex: number
+      if (placedTile.isBlank) {
+        tileIndex = newRack.findIndex(rackTile => rackTile.isBlank)
+      } else {
+        tileIndex = newRack.findIndex(
           rackTile =>
             rackTile.letter === placedTile.letter &&
             rackTile.points === placedTile.points &&
             rackTile.isBlank === placedTile.isBlank
         )
-        if (tileIndex !== -1) {
-          newRack.splice(tileIndex, 1)
-        }
-      })
+      }
+      if (tileIndex !== -1) {
+        newRack.splice(tileIndex, 1)
+      }
+    })
 
       // Draw new tiles to refill rack
       const tilesNeeded = 7 - newRack.length
@@ -484,9 +489,14 @@ export const useMultiplayerGame = (gameId: string) => {
     // Remove tiles that are currently pending placement
     const rackCopy = [...baseRack]
     pendingTiles.forEach(tile => {
-      const index = rackCopy.findIndex(
-        r => r.letter === tile.letter && r.points === tile.points && r.isBlank === tile.isBlank
-      )
+      let index: number
+      if (tile.isBlank) {
+        index = rackCopy.findIndex(r => r.isBlank)
+      } else {
+        index = rackCopy.findIndex(
+          r => r.letter === tile.letter && r.points === tile.points && r.isBlank === tile.isBlank
+        )
+      }
       if (index !== -1) rackCopy.splice(index, 1)
     })
 
