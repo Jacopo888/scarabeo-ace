@@ -5,6 +5,21 @@ import { GameRecord, MoveRecord } from '@/types/multiplayer'
 import { GameState, Tile, PlacedTile } from '@/types/game'
 import { useToast } from '@/hooks/use-toast'
 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+const drawTiles = (bag: Tile[], count: number): { drawn: Tile[]; remaining: Tile[] } => {
+  const drawn = bag.slice(0, count)
+  const remaining = bag.slice(count)
+  return { drawn, remaining }
+}
+
 export const useMultiplayerGame = (gameId: string) => {
   const [game, setGame] = useState<GameRecord | null>(null)
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -253,6 +268,91 @@ export const useMultiplayerGame = (gameId: string) => {
     }
   }
 
+  const exchangeTiles = async (indexes: number[]) => {
+    if (!game || !user || !isMyTurn || indexes.length === 0) return
+
+    if (game.tile_bag.length < indexes.length) {
+      toast({
+        title: 'Errore',
+        description: 'Non ci sono abbastanza tessere nel sacchetto',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      const isPlayer1 = game.player1_id === user.id
+      const rack = isPlayer1 ? [...game.player1_rack] : [...game.player2_rack]
+      const tilesToReturn: Tile[] = []
+
+      const sorted = [...indexes].sort((a, b) => b - a)
+      sorted.forEach(i => {
+        const t = rack[i]
+        if (t) {
+          tilesToReturn.push(t)
+          rack.splice(i, 1)
+        }
+      })
+
+      const bagWithReturned = shuffleArray([...game.tile_bag, ...tilesToReturn])
+      const { drawn, remaining } = drawTiles(bagWithReturned, indexes.length)
+      const newRack = [...rack, ...drawn]
+
+      const nextPlayerId = game.current_player_id === game.player1_id
+        ? game.player2_id
+        : game.player1_id
+
+      const gameUpdate: any = {
+        tile_bag: remaining,
+        current_player_id: nextPlayerId,
+        updated_at: new Date().toISOString()
+      }
+
+      if (isPlayer1) {
+        gameUpdate.player1_rack = newRack
+      } else {
+        gameUpdate.player2_rack = newRack
+      }
+
+      const { error: gameError } = await supabase
+        .from('games')
+        .update(gameUpdate)
+        .eq('id', game.id)
+
+      if (gameError) throw gameError
+
+      const { error: moveError } = await supabase
+        .from('moves')
+        .insert({
+          game_id: game.id,
+          player_id: user.id,
+          move_type: 'exchange_tiles',
+          tiles_exchanged: tilesToReturn as any,
+          score_earned: 0,
+          board_state_after: game.board_state as any,
+          rack_after: newRack as any
+        })
+
+      if (moveError) throw moveError
+
+      toast({
+        title: 'Tessere scambiate',
+        description: `Hai scambiato ${indexes.length} tessere`
+      })
+    } catch (error) {
+      console.error('Error exchanging tiles:', error)
+      toast({
+        title: 'Errore',
+        description: 'Impossibile scambiare le tessere',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const passTurn = async () => {
     if (!game || !user || !isMyTurn) return
 
@@ -342,6 +442,7 @@ export const useMultiplayerGame = (gameId: string) => {
     placeTile,
     pickupTile,
     submitMove,
+    exchangeTiles,
     passTurn,
     getOpponentInfo,
     getMyScore,
