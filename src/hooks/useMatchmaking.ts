@@ -2,7 +2,23 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { MatchmakingEntry, GameRecord } from '@/types/multiplayer'
+import { TILE_DISTRIBUTION, Tile } from '@/types/game'
 import { useToast } from '@/hooks/use-toast'
+
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+const drawTiles = (bag: Tile[], count: number): { drawn: Tile[]; remaining: Tile[] } => {
+  const drawn = bag.slice(0, count)
+  const remaining = bag.slice(count)
+  return { drawn, remaining }
+}
 
 export const useMatchmaking = () => {
   const [isInQueue, setIsInQueue] = useState(false)
@@ -178,11 +194,21 @@ export const useMatchmaking = () => {
     }
   }
 
-  const createGame = async (player1Id: string, player2Id: string, duration: string) => {
-    // Initialize game with empty board and full tile bag
+  const createGame = async (
+    player1Id: string,
+    player2Id: string,
+    duration: string
+  ) => {
     const initialBoard = {}
-    const initialTileBag = [...Array(100)].map(() => ({ letter: 'A', points: 1 })) // Simplified for demo
-    const initialRack = [...Array(7)].map(() => ({ letter: 'A', points: 1 })) // Simplified for demo
+
+    // Shuffle full tile distribution and draw starting racks
+    const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
+    const player1Tiles = drawTiles(shuffledBag, 7)
+    const player2Tiles = drawTiles(player1Tiles.remaining, 7)
+
+    const initialTileBag = player2Tiles.remaining
+    const player1Rack = player1Tiles.drawn
+    const player2Rack = player2Tiles.drawn
 
     const { error } = await supabase
       .from('games')
@@ -193,8 +219,8 @@ export const useMatchmaking = () => {
         status: 'active',
         board_state: initialBoard,
         tile_bag: initialTileBag,
-        player1_rack: initialRack,
-        player2_rack: initialRack,
+        player1_rack: player1Rack,
+        player2_rack: player2Rack,
         turn_duration: duration
       })
 

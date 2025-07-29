@@ -230,6 +230,7 @@ export const useGame = () => {
   }, [pendingTiles])
 
   const reshuffleTiles = useCallback(() => {
+    cancelMove()
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const shuffledRack = shuffleArray([...currentPlayer.rack])
@@ -245,9 +246,10 @@ export const useGame = () => {
         players: newPlayers
       }
     })
-  }, [])
+  }, [cancelMove])
 
   const exchangeTiles = useCallback(() => {
+    cancelMove()
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const rackSize = currentPlayer.rack.length
@@ -271,10 +273,11 @@ export const useGame = () => {
         passCount: 0
       }
     })
-  }, [])
+  }, [cancelMove])
 
 
   const passTurn = useCallback(() => {
+    cancelMove()
     setGameState(prev => {
       const newPassCount = (prev.passCount || 0) + 1
       
@@ -292,7 +295,7 @@ export const useGame = () => {
         passCount: newPassCount
       }
     })
-  }, [])
+  }, [cancelMove])
 
   const endTurn = useCallback(() => {
     setGameState(prev => {
