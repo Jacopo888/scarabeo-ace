@@ -104,9 +104,9 @@ export const useMultiplayerGame = (gameId: string) => {
   const updateGameState = (gameData: any) => {
     if (!user) return
 
-    const isPlayer1 = gameData.player1_id === user.id
-    const myRack = isPlayer1 ? gameData.player1_rack : gameData.player2_rack
-    const opponentRack = isPlayer1 ? gameData.player2_rack : gameData.player1_rack
+    const boardMap = new Map<string, PlacedTile>(
+      Object.entries(gameData.board_state || {}) as [string, PlacedTile][]
+    )
 
     const state: GameState = {
       players: [
@@ -118,13 +118,13 @@ export const useMultiplayerGame = (gameId: string) => {
         },
         {
           id: gameData.player2_id,
-          name: 'Giocatore 2', 
+          name: 'Giocatore 2',
           score: gameData.player2_score,
           rack: gameData.player2_rack as Tile[]
         }
       ],
       currentPlayerIndex: gameData.current_player_id === gameData.player1_id ? 0 : 1,
-      board: new Map(),
+      board: boardMap,
       tileBag: gameData.tile_bag as Tile[],
       gameStatus: 'playing'
     }
@@ -319,7 +319,18 @@ export const useMultiplayerGame = (gameId: string) => {
 
   const getCurrentRack = () => {
     if (!game || !user) return []
-    return game.player1_id === user.id ? game.player1_rack : game.player2_rack
+    const baseRack = game.player1_id === user.id ? game.player1_rack : game.player2_rack
+
+    // Remove tiles that are currently pending placement
+    const rackCopy = [...baseRack]
+    pendingTiles.forEach(tile => {
+      const index = rackCopy.findIndex(
+        r => r.letter === tile.letter && r.points === tile.points && r.isBlank === tile.isBlank
+      )
+      if (index !== -1) rackCopy.splice(index, 1)
+    })
+
+    return rackCopy
   }
 
   return {
