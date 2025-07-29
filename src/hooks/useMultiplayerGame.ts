@@ -228,6 +228,13 @@ export const useMultiplayerGame = (gameId: string) => {
 
       if (moveError) throw moveError
 
+      console.log('Move submitted successfully:', {
+        pendingTiles: pendingTiles.length,
+        newBoardState: Object.keys(newBoardState).length,
+        newRackSize: newRack.length,
+        moveScore
+      })
+
       setPendingTiles([])
       toast({
         title: "Mossa inviata!",

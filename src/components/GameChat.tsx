@@ -58,12 +58,13 @@ export const GameChat = ({ gameId }: GameChatProps) => {
 
   const fetchMessages = async () => {
     try {
+      // Use direct query with any type to bypass type issues
       const { data, error } = await (supabase as any)
         .from('game_chats')
         .select('*')
         .eq('game_id', gameId)
         .order('created_at', { ascending: true })
-
+      
       if (error) throw error
       setMessages(data || [])
       setTimeout(scrollToBottom, 100)
@@ -79,6 +80,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
     try {
       setLoading(true)
       
+      // Use direct insert with any type to bypass type issues
       const { error } = await (supabase as any)
         .from('game_chats')
         .insert({

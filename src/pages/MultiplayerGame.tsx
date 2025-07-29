@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
+import { TileCounter } from '@/components/TileCounter'
+import { GameChat } from '@/components/GameChat'
 import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame'
@@ -261,6 +263,15 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
               </CardContent>
             </Card>
           </div>
+        </div>
+        
+        {/* Game Info Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+          {/* Tile Counter */}
+          <TileCounter tileBag={game?.tile_bag || []} />
+          
+          {/* Game Chat */}
+          <GameChat gameId={gameId} />
         </div>
       </div>
     </div>
