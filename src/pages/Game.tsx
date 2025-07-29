@@ -6,6 +6,8 @@ import { TileRack } from "@/components/TileRack"
 import { TileActions } from "@/components/TileActions"
 import { DictionaryLoader } from "@/components/DictionaryLoader"
 import { ArrowLeft } from "lucide-react"
+import { useState } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Link } from "react-router-dom"
 
 const GameContent = () => {
@@ -23,6 +25,19 @@ const GameContent = () => {
     exchangeTiles,
     isBotTurn
   } = useGameContext()
+
+  const isMobile = useIsMobile()
+  const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+
+  const selectedTile =
+    selectedTileIndex !== null ? currentPlayer.rack[selectedTileIndex] : null
+
+  const handleTileSelect = (index: number) => {
+    if (!isMobile) return
+    setSelectedTileIndex(prev => (prev === index ? null : index))
+  }
+
+  const clearSelectedTile = () => setSelectedTileIndex(null)
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -46,6 +61,8 @@ const GameContent = () => {
                 onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
                 onTilePickup={(row, col) => pickupTile(row, col)}
                 disabled={isBotTurn || currentPlayer.isBot}
+                selectedTile={selectedTile}
+                onUseSelectedTile={clearSelectedTile}
               />
               <div className="absolute bottom-2 right-2 bg-secondary rounded p-2 text-sm shadow">
                 {gameState.players.map(p => (
@@ -58,7 +75,11 @@ const GameContent = () => {
             </div>
             {!currentPlayer.isBot && (
               <div className="mt-6 space-y-4">
-                <TileRack tiles={currentPlayer.rack} />
+                <TileRack
+                  tiles={currentPlayer.rack}
+                  selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
+                  onTileSelect={handleTileSelect}
+                />
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button
                     onClick={confirmMove}
