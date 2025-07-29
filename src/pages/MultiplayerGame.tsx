@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
+import { useState } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame'
 import { useAuth } from '@/contexts/AuthContext'
 import { Clock, User, Trophy, ArrowLeft } from 'lucide-react'
@@ -37,6 +39,19 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
     getMyScore,
     getCurrentRack
   } = useMultiplayerGame(gameId)
+
+  const isMobile = useIsMobile()
+  const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+
+  const selectedTile =
+    selectedTileIndex !== null ? (getCurrentRack() as any)[selectedTileIndex] : null
+
+  const handleTileSelect = (index: number) => {
+    if (!isMobile) return
+    setSelectedTileIndex(prev => (prev === index ? null : index))
+  }
+
+  const clearSelectedTile = () => setSelectedTileIndex(null)
 
   if (!user) {
     return <Navigate to="/auth" replace />
@@ -103,6 +118,8 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
                   onTilePickup={pickupTile}
                   pendingTiles={pendingTiles}
+                  selectedTile={selectedTile}
+                  onUseSelectedTile={clearSelectedTile}
                 />
               </CardContent>
             </Card>
@@ -121,7 +138,11 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <TileRack tiles={currentRack as any} />
+                  <TileRack
+                    tiles={currentRack as any}
+                    selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
+                    onTileSelect={handleTileSelect}
+                  />
                   
                   {isMyTurn && (
                     <div className="flex gap-2 mt-4">

@@ -63,7 +63,7 @@ const getSquareText = (type: string) => {
   }
 }
 
-import { PlacedTile } from '@/types/game'
+import { PlacedTile, Tile } from '@/types/game'
 
 interface ScrabbleBoardProps {
   placedTiles?: Map<string, PlacedTile>
@@ -71,6 +71,8 @@ interface ScrabbleBoardProps {
   onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
   onTilePickup?: (row: number, col: number) => void
   disabled?: boolean
+  selectedTile?: Tile | null
+  onUseSelectedTile?: () => void
 }
 
 export const ScrabbleBoard = ({
@@ -78,7 +80,9 @@ export const ScrabbleBoard = ({
   pendingTiles = [],
   onTilePlaced,
   onTilePickup,
-  disabled = false
+  disabled = false,
+  selectedTile = null,
+  onUseSelectedTile
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const [blankTileData, setBlankTileData] = useState<{ row: number; col: number; tile: PlacedTile } | null>(null)
@@ -142,6 +146,32 @@ export const ScrabbleBoard = ({
     setDragOverSquare(null)
   }
 
+  const handleSquareClick = (row: number, col: number) => {
+    if (disabled) return
+    if (!selectedTile) return
+
+    const key = `${row},${col}`
+    if (placedTiles.has(key) || pendingTiles.some(t => t.row === row && t.col === col)) {
+      return
+    }
+
+    const newTile: PlacedTile = {
+      letter: selectedTile.letter,
+      points: selectedTile.points,
+      isBlank: selectedTile.isBlank,
+      row,
+      col
+    }
+
+    if (newTile.isBlank) {
+      setBlankTileData({ row, col, tile: newTile })
+    } else {
+      onTilePlaced?.(row, col, newTile)
+    }
+
+    onUseSelectedTile?.()
+  }
+
   const renderSquare = (row: number, col: number) => {
     const key = `${row},${col}`
     const specialType = SPECIAL_SQUARES[key as keyof typeof SPECIAL_SQUARES]
@@ -163,6 +193,11 @@ export const ScrabbleBoard = ({
         onDrop={(e) => handleDrop(e, row, col)}
         onDragOver={(e) => handleDragOver(e, key)}
         onDragLeave={handleDragLeave}
+        onClick={() => {
+          if (!currentTile) {
+            handleSquareClick(row, col)
+          }
+        }}
       >
         {currentTile ? (
           <div
