@@ -217,10 +217,10 @@ export const useMatchmaking = () => {
         player2_id: player2Id,
         current_player_id: player1Id,
         status: 'active',
-        board_state: initialBoard,
-        tile_bag: initialTileBag,
-        player1_rack: player1Rack,
-        player2_rack: player2Rack,
+        board_state: initialBoard as any,
+        tile_bag: initialTileBag as any,
+        player1_rack: player1Rack as any,
+        player2_rack: player2Rack as any,
         turn_duration: duration
       })
 
