@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
 import { TileCounter } from '@/components/TileCounter'
+import { ExchangeTilesDialog } from '@/components/ExchangeTilesDialog'
 import { GameChat } from '@/components/GameChat'
 import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -36,6 +37,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
     placeTile,
     pickupTile,
     submitMove,
+    exchangeTiles,
     passTurn,
     getOpponentInfo,
     getMyScore,
@@ -44,6 +46,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
 
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+  const [exchangeOpen, setExchangeOpen] = useState(false)
 
   const selectedTile =
     selectedTileIndex !== null ? (getCurrentRack() as any)[selectedTileIndex] : null
@@ -54,6 +57,10 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   }
 
   const clearSelectedTile = () => setSelectedTileIndex(null)
+
+  const handleExchange = (indexes: number[]) => {
+    exchangeTiles(indexes)
+  }
 
   if (!user) {
     return <Navigate to="/auth" replace />
@@ -117,7 +124,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
               <CardContent className="p-6 relative">
                 <TileCounter
                   tileBag={game?.tile_bag || []}
-                  className="absolute top-0 left-0 w-20 text-xs"
+                  className="absolute bottom-0 right-0 w-20 text-xs"
                 />
                 <ScrabbleBoard
                   placedTiles={gameState.board}
@@ -152,18 +159,24 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   
                   {isMyTurn && (
                     <div className="flex gap-2 mt-4">
-                      <Button 
+                      <Button
                         onClick={submitMove}
                         disabled={!canSubmitMove}
                         className="flex-1"
                       >
                         Invia Mossa ({pendingTiles.length} tessere)
                       </Button>
-                      <Button 
+                      <Button
                         variant="outline"
                         onClick={passTurn}
                       >
                         Passa Turno
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setExchangeOpen(true)}
+                      >
+                        Scambia Tessere
                       </Button>
                     </div>
                   )}
@@ -270,10 +283,16 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
         </div>
         
         {/* Game Info Section */}
-        <div className="mt-6">
-          <GameChat gameId={gameId} />
-        </div>
+      <div className="mt-6">
+        <GameChat gameId={gameId} />
       </div>
+      <ExchangeTilesDialog
+        open={exchangeOpen}
+        onOpenChange={setExchangeOpen}
+        rack={currentRack as any}
+        onConfirm={handleExchange}
+      />
     </div>
-  )
+  </div>
+)
 }
