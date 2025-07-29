@@ -4,6 +4,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { GameRecord, MoveRecord } from '@/types/multiplayer'
 import { GameState, Tile, PlacedTile } from '@/types/game'
 import { useToast } from '@/hooks/use-toast'
+import { validateMoveLogic } from '@/utils/moveValidation'
+import { findNewWordsFormed } from '@/utils/newWordFinder'
+import { calculateNewMoveScore } from '@/utils/newScoring'
+import { useDictionary } from '@/contexts/DictionaryContext'
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array]
@@ -28,6 +32,7 @@ export const useMultiplayerGame = (gameId: string) => {
   const [isMyTurn, setIsMyTurn] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
+  const { isValidWord } = useDictionary()
 
   // Fetch initial game data
   useEffect(() => {
@@ -119,9 +124,26 @@ export const useMultiplayerGame = (gameId: string) => {
   const updateGameState = (gameData: any) => {
     if (!user) return
 
-    const boardMap = new Map<string, PlacedTile>(
-      Object.entries(gameData.board_state || {}) as [string, PlacedTile][]
+    const boardEntries = Object.entries(gameData.board_state || {}).map(
+      ([key, val]) => [
+        key,
+        {
+          ...val,
+          isBlank:
+            'isBlank' in (val as any)
+              ? (val as any).isBlank
+              : (val as any).letter === '' && (val as any).points === 0,
+        } as PlacedTile,
+      ] as [string, PlacedTile]
     )
+    const boardMap = new Map<string, PlacedTile>(boardEntries)
+
+    const normalizeRack = (rack: any[]): Tile[] =>
+      rack.map((t: any) => ({
+        letter: t.letter ?? '',
+        points: t.points ?? 0,
+        isBlank: t.isBlank ?? (t.letter === '' && t.points === 0),
+      }))
 
     const state: GameState = {
       players: [
@@ -129,14 +151,14 @@ export const useMultiplayerGame = (gameId: string) => {
           id: gameData.player1_id,
           name: 'Giocatore 1',
           score: gameData.player1_score,
-          rack: gameData.player1_rack as Tile[]
+          rack: normalizeRack(gameData.player1_rack || []),
         },
         {
           id: gameData.player2_id,
           name: 'Giocatore 2',
           score: gameData.player2_score,
-          rack: gameData.player2_rack as Tile[]
-        }
+          rack: normalizeRack(gameData.player2_rack || []),
+        },
       ],
       currentPlayerIndex: gameData.current_player_id === gameData.player1_id ? 0 : 1,
       board: boardMap,
@@ -173,32 +195,68 @@ export const useMultiplayerGame = (gameId: string) => {
     try {
       setLoading(true)
 
-      // Convert pending tiles to board state - using consistent key format
-      const newBoardState = { ...game.board_state }
+      // Prepare board map for validation and scoring
+      const boardMap = new Map<string, PlacedTile>(
+        Object.entries(game.board_state || {}) as [string, PlacedTile][]
+      )
+
+      const validation = validateMoveLogic(boardMap, pendingTiles)
+      if (!validation.isValid) {
+        toast({
+          title: 'Mossa non valida',
+          description: validation.errors.join(', '),
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
+      }
+
+      const newWords = findNewWordsFormed(boardMap, pendingTiles)
+      const invalid = newWords.filter(w => !isValidWord(w.word))
+      if (invalid.length > 0) {
+        toast({
+          title: 'Parole non valide',
+          description: invalid.map(w => w.word).join(', '),
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
+      }
+
+      const moveScore = calculateNewMoveScore(newWords, pendingTiles)
+
+      // Apply tiles to board map
       pendingTiles.forEach(tile => {
-        const key = `${tile.row},${tile.col}` // Consistent with ScrabbleBoard
-        newBoardState[key] = { letter: tile.letter, points: tile.points, row: tile.row, col: tile.col }
+        const key = `${tile.row},${tile.col}`
+        boardMap.set(key, tile)
       })
+
+      const newBoardState = Object.fromEntries(boardMap)
 
       // Remove used tiles from rack more carefully to prevent duplicates
       const isPlayer1 = game.player1_id === user.id
       const currentRack = [...(isPlayer1 ? game.player1_rack : game.player2_rack)] as Tile[]
       let newRack = [...currentRack]
-      
-      // Remove tiles by matching exact properties
+
       pendingTiles.forEach(placedTile => {
-        const tileIndex = newRack.findIndex(rackTile => 
-          rackTile.letter === placedTile.letter && 
-          rackTile.points === placedTile.points &&
-          rackTile.isBlank === placedTile.isBlank
+        const tileIndex = newRack.findIndex(
+          rackTile =>
+            rackTile.letter === placedTile.letter &&
+            rackTile.points === placedTile.points &&
+            rackTile.isBlank === placedTile.isBlank
         )
         if (tileIndex !== -1) {
           newRack.splice(tileIndex, 1)
         }
       })
 
-      // Calculate score (simplified)
-      const moveScore = pendingTiles.reduce((sum, tile) => sum + tile.points, 0)
+      // Draw new tiles to refill rack
+      const tilesNeeded = 7 - newRack.length
+      const { drawn, remaining } =
+        tilesNeeded > 0 && game.tile_bag.length > 0
+          ? drawTiles(game.tile_bag, Math.min(tilesNeeded, game.tile_bag.length))
+          : { drawn: [], remaining: game.tile_bag }
+      newRack = [...newRack, ...drawn]
 
       // Determine next player
       const nextPlayerId = game.current_player_id === game.player1_id 
@@ -208,8 +266,9 @@ export const useMultiplayerGame = (gameId: string) => {
       // Update game state
       const gameUpdate: any = {
         board_state: newBoardState,
+        tile_bag: remaining,
         current_player_id: nextPlayerId,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       if (isPlayer1) {
@@ -236,9 +295,10 @@ export const useMultiplayerGame = (gameId: string) => {
           player_id: user.id,
           move_type: 'place_tiles',
           tiles_placed: pendingTiles as any,
+          words_formed: newWords.map(w => w.word) as any,
           score_earned: moveScore,
           board_state_after: newBoardState as any,
-          rack_after: newRack as any
+          rack_after: newRack as any,
         })
 
       if (moveError) throw moveError
