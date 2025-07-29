@@ -47,8 +47,36 @@ const AppRoutes = () => {
   )
 }
 
-const App = () => {
+const AppContent = () => {
   const { user } = useAuth()
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 border-b border-border flex items-center px-4">
+            <SidebarTrigger />
+            <h2 className="ml-4 text-lg font-semibold">Scrabble Online</h2>
+            <div className="ml-auto flex items-center gap-2">
+              {!user && (
+                <Link to="/auth" className="text-sm underline">
+                  Accedi / Registrati
+                </Link>
+              )}
+              <NotificationSystem />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto">
+            <AppRoutes />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  )
+}
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -58,33 +86,11 @@ const App = () => {
           <AuthProvider>
             <DictionaryProvider>
               <BotProvider>
-              <SidebarProvider>
-              <div className="min-h-screen flex w-full bg-background">
-              <AppSidebar />
-              <div className="flex-1 flex flex-col">
-                <header className="h-14 border-b border-border flex items-center px-4">
-                  <SidebarTrigger />
-                  <h2 className="ml-4 text-lg font-semibold">Scrabble Online</h2>
-                  <div className="ml-auto flex items-center gap-2">
-                    {!user && (
-                      <Link to="/auth" className="text-sm underline">
-                        Accedi / Registrati
-                      </Link>
-                    )}
-                    <NotificationSystem />
-                    <ThemeToggle />
-                  </div>
-                </header>
-                <main className="flex-1 overflow-auto">
-                  <AppRoutes />
-                </main>
-              </div>
-            </div>
-            </SidebarProvider>
-            </BotProvider>
-          </DictionaryProvider>
-        </AuthProvider>
-      </BrowserRouter>
+                <AppContent />
+              </BotProvider>
+            </DictionaryProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   )
