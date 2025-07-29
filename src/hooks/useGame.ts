@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { GameState, Player, Tile, PlacedTile, TILE_DISTRIBUTION } from '@/types/game'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
@@ -467,7 +467,13 @@ export const useGame = () => {
   }, [gameState.currentPlayerIndex, gameState.gameStatus, makeBotMove, isBotTurn, difficulty])
 
   // Effect to reset game when difficulty changes
+  const isFirstRender = useRef(true)
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     if (difficulty) {
       resetGame()
     }
