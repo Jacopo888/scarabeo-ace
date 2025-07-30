@@ -341,6 +341,23 @@ export const useMultiplayerGame = (gameId: string) => {
         description: `Hai guadagnato ${moveScore} punti`
       })
 
+      if (endGame) {
+        const mode =
+          game.turn_duration === '1h' ? 'blitz'
+          : game.turn_duration === '6h' ? 'rapid'
+          : 'async'
+        fetch('/rating/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player1Id: Number(game.player1_id),
+            player2Id: Number(game.player2_id),
+            winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
+            mode
+          })
+        }).catch(err => console.error('rating report error', err))
+      }
+
     } catch (error) {
       console.error('Error submitting move:', error)
       toast({
@@ -489,6 +506,23 @@ export const useMultiplayerGame = (gameId: string) => {
         description: "You passed the turn"
       })
 
+      if (gameUpdate.status === 'completed') {
+        const mode =
+          game.turn_duration === '1h' ? 'blitz'
+          : game.turn_duration === '6h' ? 'rapid'
+          : 'async'
+        fetch('/rating/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player1Id: Number(game.player1_id),
+            player2Id: Number(game.player2_id),
+            winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
+            mode
+          })
+        }).catch(err => console.error('rating report error', err))
+      }
+
     } catch (error) {
       console.error('Error passing turn:', error)
       toast({
@@ -506,8 +540,9 @@ export const useMultiplayerGame = (gameId: string) => {
 
     const isPlayer1 = game.player1_id === user.id
     const opponent = isPlayer1 ? game.player2 : game.player1
-    
+
     return {
+      id: isPlayer1 ? game.player2_id : game.player1_id,
       name: opponent?.display_name || opponent?.username || 'Avversario',
       score: isPlayer1 ? game.player2_score : game.player1_score
     }

@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame'
 import { useAuth } from '@/contexts/AuthContext'
 import { Clock, User, Trophy, ArrowLeft } from 'lucide-react'
+import { usePlayerRating } from '@/hooks/usePlayerRating'
 import { formatTimeRemaining } from '@/utils/timeUtils'
 
 export default function MultiplayerGame() {
@@ -93,6 +94,8 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const opponent = getOpponentInfo()
   const myScore = getMyScore()
   const currentRack = getCurrentRack()
+  const { rating: myRating } = usePlayerRating(user.id)
+  const { rating: opponentRating } = usePlayerRating(opponent?.id)
 
   const canSubmitMove = isMyTurn && pendingTiles.length > 0
   const gameStatus = game.status === 'waiting' ? 'Waiting for second player' :
@@ -204,7 +207,11 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>You</span>
+                    <span>
+                      You {myRating !== undefined && (
+                        <span className="text-xs text-muted-foreground">({myRating})</span>
+                      )}
+                    </span>
                   </div>
                   <span className="font-bold text-lg">{myScore}</span>
                 </div>
@@ -212,7 +219,12 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>{opponent?.name || 'Opponent'}</span>
+                    <span>
+                      {opponent?.name || 'Opponent'}{' '}
+                      {opponentRating !== undefined && (
+                        <span className="text-xs text-muted-foreground">({opponentRating})</span>
+                      )}
+                    </span>
                   </div>
                   <span className="font-bold text-lg">{opponent?.score || 0}</span>
                 </div>
