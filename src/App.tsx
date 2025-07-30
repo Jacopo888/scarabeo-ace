@@ -60,7 +60,7 @@ const AppContent = () => {
             <div className="ml-auto flex items-center gap-2">
               {!user && (
                 <Link to="/auth" className="text-sm underline">
-                  Accedi / Registrati
+                  Sign In / Register
                 </Link>
               )}
               <NotificationSystem />

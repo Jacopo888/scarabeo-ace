@@ -113,8 +113,8 @@ export const useMultiplayerGame = (gameId: string) => {
     } catch (error) {
       console.error('Error fetching game:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile caricare la partita",
+        title: "Error",
+        description: "Unable to load the game",
         variant: "destructive"
       })
     } finally {
@@ -204,7 +204,7 @@ export const useMultiplayerGame = (gameId: string) => {
       const validation = validateMoveLogic(boardMap, pendingTiles)
       if (!validation.isValid) {
         toast({
-          title: 'Mossa non valida',
+          title: 'Invalid move',
           description: validation.errors.join(', '),
           variant: 'destructive',
         })
@@ -216,7 +216,7 @@ export const useMultiplayerGame = (gameId: string) => {
       const invalid = newWords.filter(w => !isValidWord(w.word))
       if (invalid.length > 0) {
         toast({
-          title: 'Parole non valide',
+          title: 'Invalid words',
           description: invalid.map(w => w.word).join(', '),
           variant: 'destructive',
         })
@@ -347,15 +347,15 @@ export const useMultiplayerGame = (gameId: string) => {
 
       setPendingTiles([])
       toast({
-        title: "Mossa inviata!",
+        title: "Move submitted!",
         description: `Hai guadagnato ${moveScore} punti`
       })
 
     } catch (error) {
       console.error('Error submitting move:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile inviare la mossa",
+        title: "Error",
+        description: "Unable to submit the move",
         variant: "destructive"
       })
     } finally {
@@ -368,8 +368,8 @@ export const useMultiplayerGame = (gameId: string) => {
 
     if (game.tile_bag.length < indexes.length) {
       toast({
-        title: 'Errore',
-        description: 'Non ci sono abbastanza tessere nel sacchetto',
+        title: 'Error',
+        description: 'Not enough tiles in the bag',
         variant: 'destructive'
       })
       return
@@ -434,14 +434,14 @@ export const useMultiplayerGame = (gameId: string) => {
       if (moveError) throw moveError
 
       toast({
-        title: 'Tessere scambiate',
+        title: 'Tiles exchanged',
         description: `Hai scambiato ${indexes.length} tessere`
       })
     } catch (error) {
       console.error('Error exchanging tiles:', error)
       toast({
-        title: 'Errore',
-        description: 'Impossibile scambiare le tessere',
+        title: 'Error',
+        description: 'Unable to exchange tiles',
         variant: 'destructive'
       })
     } finally {
@@ -495,15 +495,15 @@ export const useMultiplayerGame = (gameId: string) => {
         })
 
       toast({
-        title: "Turno passato",
-        description: "Hai passato il turno"
+        title: "Turn passed",
+        description: "You passed the turn"
       })
 
     } catch (error) {
       console.error('Error passing turn:', error)
       toast({
-        title: "Errore", 
-        description: "Impossibile passare il turno",
+        title: "Error", 
+        description: "Unable to pass the turn",
         variant: "destructive"
       })
     } finally {

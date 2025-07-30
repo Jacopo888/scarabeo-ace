@@ -72,9 +72,9 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error fetching games:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile caricare le partite",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Unable to load games',
+        variant: 'destructive'
       })
     }
   }
@@ -98,7 +98,7 @@ export default function Dashboard() {
   const getOpponentName = (game: any) => {
     const isPlayer1 = game.player1_id === user?.id
     const opponent = isPlayer1 ? game.player2 : game.player1
-    return opponent?.display_name || opponent?.username || 'Avversario'
+    return opponent?.display_name || opponent?.username || 'Opponent'
   }
 
   const getMyScore = (game: GameRecord) => {
@@ -127,9 +127,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Accesso richiesto</h1>
+          <h1 className="text-2xl font-bold mb-4">Authentication required</h1>
           <Link to="/auth">
-            <Button>Accedi</Button>
+            <Button>Sign In</Button>
           </Link>
         </div>
       </div>
@@ -143,11 +143,11 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Benvenuto/a, {profile.display_name || profile.username}!</p>
+            <p className="text-muted-foreground">Welcome, {profile.display_name || profile.username}!</p>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/game">
-              <Button variant="outline">Gioco Locale</Button>
+              <Button variant="outline">Local Game</Button>
             </Link>
             <Button variant="outline" onClick={signOut}>Logout</Button>
           </div>
@@ -159,20 +159,20 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="h-5 w-5" />
-                Statistiche
+                Statistics
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
-                <span>Partite giocate:</span>
+                <span>Games played:</span>
                 <span className="font-semibold">{profile.games_played}</span>
               </div>
               <div className="flex justify-between">
-                <span>Partite vinte:</span>
+                <span>Games won:</span>
                 <span className="font-semibold">{profile.games_won}</span>
               </div>
               <div className="flex justify-between">
-                <span>Percentuale vittorie:</span>
+                <span>Win rate:</span>
                 <span className="font-semibold">
                   {profile.games_played > 0 
                     ? Math.round((profile.games_won / profile.games_played) * 100) 
@@ -180,7 +180,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Livello abilità:</span>
+                <span>Skill level:</span>
                 <span className="font-semibold">{profile.skill_level}</span>
               </div>
             </CardContent>
@@ -194,23 +194,23 @@ export default function Dashboard() {
                 Matchmaking
               </CardTitle>
               <CardDescription>
-                Trova un avversario per una nuova partita
+                Find an opponent for a new match
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {!isInQueue ? (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Durata turno preferita:</label>
+                    <label className="text-sm font-medium">Preferred turn duration:</label>
                     <Select value={preferredDuration} onValueChange={(value) => setPreferredDuration(value as '1h' | '6h' | '24h' | '48h')}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1h">1 ora</SelectItem>
-                        <SelectItem value="6h">6 ore</SelectItem>
-                        <SelectItem value="24h">24 ore</SelectItem>
-                        <SelectItem value="48h">48 ore</SelectItem>
+                        <SelectItem value="1h">1 hour</SelectItem>
+                        <SelectItem value="6h">6 hours</SelectItem>
+                        <SelectItem value="24h">24 hours</SelectItem>
+                        <SelectItem value="48h">48 hours</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -219,14 +219,14 @@ export default function Dashboard() {
                     disabled={loading}
                     className="w-full"
                   >
-                    {loading ? 'Ricerca in corso...' : 'Cerca Partita'}
+                    {loading ? 'Searching...' : 'Find Match'}
                   </Button>
                 </>
               ) : (
                 <div className="text-center space-y-4">
                   <div className="flex items-center justify-center gap-2">
                     <Target className="h-5 w-5 animate-pulse" />
-                    <span>In coda per matchmaking...</span>
+                    <span>In matchmaking queue...</span>
                   </div>
                   <Button 
                     variant="outline" 
@@ -234,7 +234,7 @@ export default function Dashboard() {
                     disabled={loading}
                     className="w-full"
                   >
-                    Esci dalla coda
+                    Leave queue
                   </Button>
                 </div>
               )}
@@ -244,17 +244,17 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Azioni Rapide</CardTitle>
+              <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Link to="/game">
                 <Button variant="outline" className="w-full">
-                  Gioco vs Bot
+                  Play vs Bot
                 </Button>
               </Link>
               <Link to="/dictionary">
                 <Button variant="outline" className="w-full">
-                  Dizionario
+                  Dictionary
                 </Button>
               </Link>
             </CardContent>
@@ -266,16 +266,16 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Partite Attive ({activeGames.length})
+              Active Games ({activeGames.length})
             </CardTitle>
             <CardDescription>
-              Le tue partite in corso
+              Your ongoing games
             </CardDescription>
           </CardHeader>
           <CardContent>
             {activeGames.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nessuna partita attiva. Inizia una nuova partita tramite matchmaking!
+                No active games. Start a new one via matchmaking!
               </p>
             ) : (
               <div className="space-y-4">
@@ -285,7 +285,7 @@ export default function Dashboard() {
                       <div>
                         <h3 className="font-semibold">vs {getOpponentName(game)}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Creata: {new Date(game.created_at).toLocaleDateString()}
+                          Created: {new Date(game.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <Badge variant={getStatusColor(game)}>
@@ -295,19 +295,19 @@ export default function Dashboard() {
                     
                     <div className="flex justify-between items-center mb-2">
                       <div className="text-sm">
-                        Tu: <span className="font-semibold">{getMyScore(game)}</span> - 
-                        Avversario: <span className="font-semibold">{getOpponentScore(game)}</span>
+                        You: <span className="font-semibold">{getMyScore(game)}</span> -
+                        Opponent: <span className="font-semibold">{getOpponentScore(game)}</span>
                       </div>
                       {game.turn_deadline && (
                         <div className="text-sm text-muted-foreground">
-                          Scade: {formatTimeRemaining(game.turn_deadline)}
+                          Expires: {formatTimeRemaining(game.turn_deadline)}
                         </div>
                       )}
                     </div>
                     
                     <Link to={`/multiplayer-game/${game.id}`}>
                       <Button size="sm">
-                        {game.current_player_id === user.id ? 'Gioca il tuo turno' : 'Visualizza partita'}
+                        {game.current_player_id === user.id ? 'Play your turn' : 'View game'}
                       </Button>
                     </Link>
                   </div>

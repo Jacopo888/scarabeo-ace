@@ -71,7 +71,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Caricamento partita...</p>
+          <p className="text-muted-foreground">Loading game...</p>
         </div>
       </div>
     )
@@ -81,9 +81,9 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Partita non trovata</h1>
+          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
           <Link to="/dashboard">
-            <Button>Torna alla Dashboard</Button>
+            <Button>Back to Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -95,8 +95,8 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const currentRack = getCurrentRack()
 
   const canSubmitMove = isMyTurn && pendingTiles.length > 0
-  const gameStatus = game.status === 'waiting' ? 'In attesa del secondo giocatore' : 
-                    isMyTurn ? 'È il tuo turno' : 'Turno dell\'avversario'
+  const gameStatus = game.status === 'waiting' ? 'Waiting for second player' :
+                    isMyTurn ? "It's your turn" : "Opponent's turn"
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +110,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 Dashboard
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold">Partita Multiplayer</h1>
+            <h1 className="text-2xl font-bold">Multiplayer Game</h1>
           </div>
           <Badge variant={isMyTurn ? "default" : "secondary"}>
             {gameStatus}
@@ -144,10 +144,10 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Le tue tessere</span>
+                    <span>Your tiles</span>
                     {isMyTurn && (
                       <span className="text-sm font-normal text-muted-foreground">
-                        È il tuo turno - Gioca!
+                        It's your turn - play!
                       </span>
                     )}
                   </CardTitle>
@@ -166,19 +166,19 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                         disabled={!canSubmitMove}
                         className="flex-1"
                       >
-                        Invia Mossa ({pendingTiles.length} tessere)
+                        Submit Move ({pendingTiles.length} tiles)
                       </Button>
                       <Button
                         variant="outline"
                         onClick={passTurn}
                       >
-                        Passa Turno
+                        Pass Turn
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => setExchangeOpen(true)}
                       >
-                        Scambia Tessere
+                        Exchange Tiles
                       </Button>
                     </div>
                   )}
@@ -186,7 +186,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   {!isMyTurn && (
                     <div className="mt-4 p-3 bg-muted rounded-lg text-center">
                       <p className="text-muted-foreground">
-                        Aspetta il turno dell'avversario...
+                        Waiting for opponent's turn...
                       </p>
                     </div>
                   )}
@@ -202,14 +202,14 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5" />
-                  Punteggi
+                  Scores
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>Tu</span>
+                    <span>You</span>
                   </div>
                   <span className="font-bold text-lg">{myScore}</span>
                 </div>
@@ -217,7 +217,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>{opponent?.name || 'Avversario'}</span>
+                    <span>{opponent?.name || 'Opponent'}</span>
                   </div>
                   <span className="font-bold text-lg">{opponent?.score || 0}</span>
                 </div>
@@ -229,34 +229,34 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  Info Partita
+                  Game Info
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Stato:</p>
+                  <p className="text-sm text-muted-foreground">Status:</p>
                   <p className="font-semibold">{gameStatus}</p>
                 </div>
                 
                 {game.turn_deadline && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Tempo rimasto:</p>
+                    <p className="text-sm text-muted-foreground">Time remaining:</p>
                     <p className="font-semibold">{formatTimeRemaining(game.turn_deadline)}</p>
                   </div>
                 )}
                 
                 <div>
-                  <p className="text-sm text-muted-foreground">Durata turno:</p>
+                  <p className="text-sm text-muted-foreground">Turn duration:</p>
                   <p className="font-semibold">
-                    {game.turn_duration === '1h' ? '1 ora' :
-                     game.turn_duration === '6h' ? '6 ore' :
-                     game.turn_duration === '24h' ? '24 ore' : '48 ore'}
+                    {game.turn_duration === '1h' ? '1 hour' :
+                     game.turn_duration === '6h' ? '6 hours' :
+                     game.turn_duration === '24h' ? '24 hours' : '48 hours'}
                   </p>
                 </div>
                 
                 <div>
-                  <p className="text-sm text-muted-foreground">Avversario:</p>
-                  <p className="font-semibold">{opponent?.name || 'In attesa...'}</p>
+                  <p className="text-sm text-muted-foreground">Opponent:</p>
+                  <p className="font-semibold">{opponent?.name || 'Waiting...'}</p>
                 </div>
               </CardContent>
             </Card>
@@ -264,12 +264,12 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
             {/* Game Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Azioni</CardTitle>
+                <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Link to="/dashboard">
                   <Button variant="outline" className="w-full">
-                    Torna alla Dashboard
+                    Back to Dashboard
                   </Button>
                 </Link>
                 <Button 
@@ -277,7 +277,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   className="w-full"
                   onClick={() => window.location.reload()}
                 >
-                  Aggiorna Partita
+                  Refresh Game
                 </Button>
               </CardContent>
             </Card>

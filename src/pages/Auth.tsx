@@ -38,14 +38,14 @@ export default function Auth() {
     if (error) {
       setError(error.message)
       toast({
-        title: "Errore di accesso",
+        title: "Login error",
         description: error.message,
         variant: "destructive"
       })
     } else {
       toast({
-        title: "Accesso effettuato",
-        description: "Benvenuto/a in Scrabble Online!"
+        title: "Signed in",
+        description: "Welcome to Scrabble Online!"
       })
       navigate('/')
     }
@@ -64,7 +64,7 @@ export default function Auth() {
     const username = formData.get('username') as string
 
     if (password.length < 6) {
-      setError('La password deve essere di almeno 6 caratteri')
+      setError('Password must be at least 6 characters')
       setIsLoading(false)
       return
     }
@@ -74,14 +74,14 @@ export default function Auth() {
     if (error) {
       setError(error.message)
       toast({
-        title: "Errore di registrazione",
+        title: "Registration error",
         description: error.message,
         variant: "destructive"
       })
     } else {
       toast({
-        title: "Registrazione completata",
-        description: "Controlla la tua email per confermare l'account"
+        title: "Registration complete",
+        description: "Check your email to confirm your account"
       })
     }
 
@@ -93,21 +93,21 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Scrabble Online</h1>
-          <p className="text-muted-foreground mt-2">Accedi per giocare con i tuoi amici</p>
+          <p className="text-muted-foreground mt-2">Sign in to play with your friends</p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Accedi</TabsTrigger>
-            <TabsTrigger value="signup">Registrati</TabsTrigger>
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Register</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
             <Card>
               <CardHeader>
-                <CardTitle>Accedi</CardTitle>
+                <CardTitle>Sign In</CardTitle>
                 <CardDescription>
-                  Inserisci le tue credenziali per accedere
+                  Enter your credentials to sign in
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -118,7 +118,7 @@ export default function Auth() {
                       id="signin-email"
                       name="email"
                       type="email"
-                      placeholder="nome@esempio.com"
+                      placeholder="name@example.com"
                       required
                       disabled={isLoading}
                     />
@@ -139,7 +139,7 @@ export default function Auth() {
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Accesso in corso...' : 'Accedi'}
+                    {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </form>
               </CardContent>
@@ -149,20 +149,20 @@ export default function Auth() {
           <TabsContent value="signup">
             <Card>
               <CardHeader>
-                <CardTitle>Registrati</CardTitle>
+                <CardTitle>Register</CardTitle>
                 <CardDescription>
-                  Crea un nuovo account per iniziare a giocare
+                  Create a new account to start playing
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">Nome utente</Label>
+                    <Label htmlFor="signup-username">Username</Label>
                     <Input
                       id="signup-username"
                       name="username"
                       type="text"
-                      placeholder="nomeutente"
+                      placeholder="username"
                       required
                       disabled={isLoading}
                     />
@@ -173,7 +173,7 @@ export default function Auth() {
                       id="signup-email"
                       name="email"
                       type="email"
-                      placeholder="nome@esempio.com"
+                      placeholder="name@example.com"
                       required
                       disabled={isLoading}
                     />
@@ -184,7 +184,7 @@ export default function Auth() {
                       id="signup-password"
                       name="password"
                       type="password"
-                      placeholder="Minimo 6 caratteri"
+                      placeholder="At least 6 characters"
                       required
                       disabled={isLoading}
                     />
@@ -195,7 +195,7 @@ export default function Auth() {
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Registrazione in corso...' : 'Registrati'}
+                    {isLoading ? 'Signing up...' : 'Register'}
                   </Button>
                 </form>
               </CardContent>
@@ -205,7 +205,7 @@ export default function Auth() {
 
         <div className="text-center mt-6">
           <Link to="/" className="text-sm text-muted-foreground hover:underline">
-            Torna alla home
+            Back to home
           </Link>
         </div>
       </div>

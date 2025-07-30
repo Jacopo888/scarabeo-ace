@@ -37,16 +37,16 @@ const Index = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-6 w-6" />
-                    Dashboard Multiplayer
+                    Multiplayer Dashboard
                   </CardTitle>
                   <CardDescription>
-                    Gestisci le tue partite online e trova nuovi avversari
+                    Manage your online games and find new opponents
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link to="/dashboard">
                     <Button className="w-full">
-                      Vai alla Dashboard
+                      Go to Dashboard
                     </Button>
                   </Link>
                 </CardContent>
@@ -56,43 +56,21 @@ const Index = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <LogIn className="h-6 w-6" />
-                    Accedi per Multiplayer
+                    Sign in for Multiplayer
                   </CardTitle>
                   <CardDescription>
-                    Crea un account per giocare online
+                    Create an account to play online
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link to="/auth">
                     <Button className="w-full">
-                      Accedi / Registrati
+                      Sign In / Register
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
             )}
-          </div>
-          
-          <div className="max-w-3xl mx-auto text-center space-y-4">
-            <h2 className="text-2xl font-semibold">Game Features</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="bg-card p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Smart Bot Opponents</h3>
-                <p className="text-muted-foreground">Choose from Easy, Medium, or Hard difficulty levels</p>
-              </div>
-              <div className="bg-card p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Advanced Word Dictionary</h3>
-                <p className="text-muted-foreground">Uses the comprehensive ENABLE word list</p>
-              </div>
-              <div className="bg-card p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Interactive Tile Management</h3>
-                <p className="text-muted-foreground">Drag, drop, reshuffle, and reposition tiles easily</p>
-              </div>
-              <div className="bg-card p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Real-time Scoring</h3>
-                <p className="text-muted-foreground">See your score calculated instantly with multipliers</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
