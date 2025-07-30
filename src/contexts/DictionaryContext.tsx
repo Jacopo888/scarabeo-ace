@@ -60,11 +60,9 @@ export const DictionaryProvider: React.FC<DictionaryProviderProps> = ({ children
 
       setWordsSet(wordsSet);
       setIsLoaded(true);
-      console.log(`Dictionary loaded with ${wordsSet.size} words`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
-      console.error('Failed to load dictionary:', err);
       
       // Fallback to basic word set if loading fails
       setWordsSet(createFallbackDictionary());
