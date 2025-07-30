@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from 'next-themes'
 import App from './App.tsx'
+import { useGameStore } from '@/store/game'
 import './index.css'
 
 createRoot(document.getElementById("root")!).render(
@@ -8,3 +9,9 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ThemeProvider>
 );
+
+if (import.meta.env.DEV) {
+  import('zustand/middleware').then(m =>
+    m.mountStoreDevtool?.('GameStore', useGameStore)
+  )
+}
