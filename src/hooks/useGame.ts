@@ -41,7 +41,7 @@ export const useGame = () => {
       players: [
         {
           id: 'player1',
-          name: 'You',
+          name: difficulty ? 'You' : 'Player 1',
           score: 0,
           rack: player1Tiles.drawn,
           isBot: false
@@ -342,7 +342,7 @@ export const useGame = () => {
       players: [
         {
           id: 'player1',
-          name: 'You',
+          name: difficulty ? 'You' : 'Player 1',
           score: 0,
           rack: player1Tiles.drawn,
           isBot: false

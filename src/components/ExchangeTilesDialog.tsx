@@ -28,13 +28,13 @@ export const ExchangeTilesDialog = ({ open, onOpenChange, rack, onConfirm }: Exc
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Scambia Tessere</DialogTitle>
+          <DialogTitle>Exchange Tiles</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <TileRack tiles={rack} selectedTiles={selected} onTileSelect={toggleTile} />
           <DialogFooter className="mt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
-            <Button onClick={handleConfirm} disabled={selected.length === 0}>Conferma</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={handleConfirm} disabled={selected.length === 0}>Confirm</Button>
           </DialogFooter>
         </div>
       </DialogContent>

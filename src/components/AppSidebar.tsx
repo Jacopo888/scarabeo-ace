@@ -17,6 +17,7 @@ import {
 
 const items = [
   { title: "Home", url: "/", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Users },
   { title: "Dictionary", url: "/dictionary", icon: BookOpen },
 ]
 

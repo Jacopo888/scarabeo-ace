@@ -123,8 +123,8 @@ export const useMatchmaking = () => {
           .in('user_id', [user.id, opponent.user_id])
 
         toast({
-          title: "Partita trovata!",
-          description: "È stata creata una nuova partita. Buona fortuna!"
+          title: 'Match found!',
+          description: 'A new game has been created. Good luck!'
         })
       } else {
         // No match found, join the queue
@@ -144,16 +144,16 @@ export const useMatchmaking = () => {
         await checkQueueStatus()
 
         toast({
-          title: "In coda per matchmaking",
-          description: "Stiamo cercando un avversario per te..."
+          title: 'Matchmaking queue',
+          description: 'Searching for an opponent for you...'
         })
       }
     } catch (error) {
       console.error('Error joining queue:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile entrare in coda per il matchmaking",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Unable to join matchmaking queue',
+        variant: 'destructive'
       })
     } finally {
       setLoading(false)
@@ -179,15 +179,15 @@ export const useMatchmaking = () => {
       setQueueEntry(null)
 
       toast({
-        title: "Uscito dalla coda",
-        description: "Hai lasciato la coda del matchmaking"
+        title: 'Left queue',
+        description: 'You left the matchmaking queue'
       })
     } catch (error) {
       console.error('Error leaving queue:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile uscire dalla coda",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Unable to leave the queue',
+        variant: 'destructive'
       })
     } finally {
       setLoading(false)
@@ -235,8 +235,8 @@ export const useMatchmaking = () => {
     setQueueEntry(null)
 
     toast({
-      title: "Partita trovata!",
-      description: "È stata creata una nuova partita. Vai alla dashboard per giocare!"
+      title: 'Match found!',
+      description: 'A new game has been created. Go to the dashboard to play!'
     })
   }
 

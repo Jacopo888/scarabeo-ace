@@ -34,17 +34,18 @@ export const NotificationSystem = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'games',
-          filter: `player1_id=eq.${user.id},player2_id=eq.${user.id}`
+          table: 'games'
         },
         (payload) => {
           const game = payload.new as any
-          addNotification({
-            type: 'game_found',
-            title: 'Nuova Partita!',
-            message: 'È stata trovata una nuova partita. Buona fortuna!',
-            gameId: game.id
-          })
+          if (game.player1_id === user.id || game.player2_id === user.id) {
+            addNotification({
+              type: 'game_found',
+              title: 'New Game!',
+              message: 'A new game has been created. Good luck!',
+              gameId: game.id
+            })
+          }
         }
       )
       .on(
@@ -52,31 +53,32 @@ export const NotificationSystem = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'games',
-          filter: `player1_id=eq.${user.id},player2_id=eq.${user.id}`
+          table: 'games'
         },
         (payload) => {
           const game = payload.new as any
-          
-          // Notify when it's the user's turn
-          if (game.current_player_id === user.id) {
-            addNotification({
-              type: 'turn_reminder',
-              title: 'È il tuo turno!',
-              message: 'Puoi ora fare la tua mossa nella partita',
-              gameId: game.id
-            })
-          }
-          
-          // Notify when game ends
-          if (game.status === 'completed') {
-            const isWinner = game.winner_id === user.id
-            addNotification({
-              type: 'game_ended',
-              title: isWinner ? 'Hai vinto!' : 'Partita terminata',
-              message: isWinner ? 'Congratulazioni per la vittoria!' : 'La partita è terminata',
-              gameId: game.id
-            })
+
+          if (game.player1_id === user.id || game.player2_id === user.id) {
+            // Notify when it's the user's turn
+            if (game.current_player_id === user.id) {
+              addNotification({
+                type: 'turn_reminder',
+                title: "It's your turn!",
+                message: 'You can make your move now',
+                gameId: game.id
+              })
+            }
+
+            // Notify when game ends
+            if (game.status === 'completed') {
+              const isWinner = game.winner_id === user.id
+              addNotification({
+                type: 'game_ended',
+                title: isWinner ? 'You won!' : 'Game ended',
+                message: isWinner ? 'Congratulations on the win!' : 'The game has finished',
+                gameId: game.id
+              })
+            }
           }
         }
       )
@@ -96,8 +98,8 @@ export const NotificationSystem = () => {
               if (isUserGame) {
                 addNotification({
                   type: 'move_made',
-                  title: 'Mossa dell\'avversario',
-                  message: 'Il tuo avversario ha fatto una mossa',
+                  title: "Opponent's move",
+                  message: 'Your opponent made a move',
                   gameId: move.game_id
                 })
               }
@@ -129,8 +131,8 @@ export const NotificationSystem = () => {
               if (timeLeft > 0 && timeLeft <= 60 * 60 * 1000) {
                 addNotification({
                   type: 'turn_reminder',
-                  title: 'Promemoria turno',
-                  message: 'Il tuo turno scade tra meno di un\'ora!',
+                  title: 'Turn reminder',
+                  message: 'Your turn expires in less than an hour!',
                   gameId: game.id
                 })
               }
@@ -231,7 +233,7 @@ export const NotificationSystem = () => {
         <Card className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto z-50 shadow-lg">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Notifiche</h3>
+              <h3 className="font-semibold">Notifications</h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <Button
@@ -240,7 +242,7 @@ export const NotificationSystem = () => {
                     onClick={markAllAsRead}
                     className="text-xs"
                   >
-                    Segna tutte come lette
+                    Mark all as read
                   </Button>
                 )}
                 <Button
@@ -257,7 +259,7 @@ export const NotificationSystem = () => {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
-                Nessuna notifica
+                No notifications
               </div>
             ) : (
               notifications.map(notification => (
@@ -304,7 +306,7 @@ export const NotificationSystem = () => {
                         window.location.href = `/multiplayer-game/${notification.gameId}`
                       }}
                     >
-                      Vai alla partita
+                      Go to game
                     </Button>
                   )}
                 </div>

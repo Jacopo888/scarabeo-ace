@@ -86,7 +86,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
         .insert({
           game_id: gameId,
           player_id: user.id,
-          player_name: user.email?.split('@')[0] || 'Giocatore',
+          player_name: user.email?.split('@')[0] || 'Player',
           message: newMessage.trim()
         })
 
@@ -97,8 +97,8 @@ export const GameChat = ({ gameId }: GameChatProps) => {
     } catch (error) {
       console.error('Error sending message:', error)
       toast({
-        title: "Errore",
-        description: "Impossibile inviare il messaggio",
+        title: "Error",
+        description: "Unable to send message",
         variant: "destructive"
       })
     } finally {
@@ -118,7 +118,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
   }
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('it-IT', {
+    return new Date(timestamp).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     })
@@ -127,7 +127,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
   return (
     <Card className="w-full h-80 flex flex-col">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Chat di gioco</CardTitle>
+        <CardTitle className="text-sm">Game Chat</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-3">
         <ScrollArea ref={scrollAreaRef} className="flex-1 pr-2">
@@ -163,7 +163,7 @@ export const GameChat = ({ gameId }: GameChatProps) => {
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Scrivi un messaggio..."
+            placeholder="Type a message..."
             disabled={loading}
             className="flex-1"
           />
