@@ -1,9 +1,26 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useGameStore, resetGameStore } from '../game'
+import { useGameStore, resetGameStore, type Tile } from '../game'
 
 describe('game store', () => {
   beforeEach(() => {
     resetGameStore()
+  })
+
+  it('adds tiles to rack when drawing', () => {
+    const tile: Tile = { id: '1', letter: 'A', value: 1 }
+    const prevLength = useGameStore.getState().rack.length
+    useGameStore.getState().drawTiles([tile])
+    expect(useGameStore.getState().rack).toHaveLength(prevLength + 1)
+  })
+
+  it('places tile on board and removes from rack', () => {
+    const tile: Tile = { id: '1', letter: 'A', value: 1 }
+    useGameStore.getState().drawTiles([tile])
+    expect(useGameStore.getState().board[0][0]).toBeNull()
+    useGameStore.getState().placeTile(0, 0, tile)
+    const state = useGameStore.getState()
+    expect(state.board[0][0]).toEqual(tile)
+    expect(state.rack).toHaveLength(0)
   })
 
   it('adds points to player', () => {
