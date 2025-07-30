@@ -108,8 +108,8 @@ export const useMultiplayerGame = (gameId: string) => {
         throw error
       }
 
-      setGame(data as any)
-      updateGameState(data)
+      setGame(data as GameRecord)
+      updateGameState(data as GameRecord)
     } catch (error) {
       console.error('Error fetching game:', error)
       toast({
@@ -122,25 +122,22 @@ export const useMultiplayerGame = (gameId: string) => {
     }
   }
 
-  const updateGameState = (gameData: any) => {
+  const updateGameState = (gameData: GameRecord) => {
     if (!user) return
 
     const boardEntries = Object.entries(gameData.board_state || {}).map(
-      ([key, val]) => [
-        key,
-        {
-          ...(val as any),
-          isBlank:
-            'isBlank' in (val as any)
-              ? (val as any).isBlank
-              : (val as any).letter === '' && (val as any).points === 0,
-        } as PlacedTile,
-      ] as [string, PlacedTile]
+      ([key, val]) => {
+        const tile: PlacedTile = {
+          ...val,
+          isBlank: val.isBlank ?? (val.letter === '' && val.points === 0)
+        }
+        return [key, tile] as [string, PlacedTile]
+      }
     )
     const boardMap = new Map<string, PlacedTile>(boardEntries)
 
-    const normalizeRack = (rack: any[]): Tile[] =>
-      rack.map((t: any) => ({
+    const normalizeRack = (rack: Tile[]): Tile[] =>
+      rack.map((t) => ({
         letter: t.letter ?? '',
         points: t.points ?? 0,
         isBlank: t.isBlank ?? (t.letter === '' && t.points === 0),
@@ -163,7 +160,7 @@ export const useMultiplayerGame = (gameId: string) => {
       ],
       currentPlayerIndex: gameData.current_player_id === gameData.player1_id ? 0 : 1,
       board: boardMap,
-      tileBag: gameData.tile_bag as Tile[],
+      tileBag: gameData.tile_bag,
       gameStatus: 'playing'
     }
 
@@ -267,7 +264,7 @@ export const useMultiplayerGame = (gameId: string) => {
         : game.player1_id
 
       // Update game state
-      const gameUpdate: any = {
+      const gameUpdate: Partial<GameRecord> = {
         board_state: newBoardState,
         tile_bag: remaining,
         current_player_id: nextPlayerId,
@@ -275,8 +272,8 @@ export const useMultiplayerGame = (gameId: string) => {
         updated_at: new Date().toISOString(),
       }
 
-      let player1RackAfter = isPlayer1 ? (newRack as any) : game.player1_rack
-      let player2RackAfter = isPlayer1 ? game.player2_rack : (newRack as any)
+      let player1RackAfter = isPlayer1 ? newRack : game.player1_rack
+      let player2RackAfter = isPlayer1 ? game.player2_rack : newRack
 
       let player1ScoreAfter = game.player1_score
       let player2ScoreAfter = game.player2_score
@@ -329,11 +326,11 @@ export const useMultiplayerGame = (gameId: string) => {
           game_id: game.id,
           player_id: user.id,
           move_type: 'place_tiles',
-          tiles_placed: pendingTiles as any,
-          words_formed: newWords.map(w => w.word) as any,
+          tiles_placed: pendingTiles,
+          words_formed: newWords.map(w => w.word),
           score_earned: moveScore,
-          board_state_after: newBoardState as any,
-          rack_after: newRack as any,
+          board_state_after: newBoardState,
+          rack_after: newRack,
         })
 
       if (moveError) throw moveError
@@ -399,7 +396,7 @@ export const useMultiplayerGame = (gameId: string) => {
         ? game.player2_id
         : game.player1_id
 
-      const gameUpdate: any = {
+      const gameUpdate: Partial<GameRecord> = {
         tile_bag: remaining,
         current_player_id: nextPlayerId,
         pass_count: 0,
@@ -425,10 +422,10 @@ export const useMultiplayerGame = (gameId: string) => {
           game_id: game.id,
           player_id: user.id,
           move_type: 'exchange_tiles',
-          tiles_exchanged: tilesToReturn as any,
+          tiles_exchanged: tilesToReturn,
           score_earned: 0,
-          board_state_after: game.board_state as any,
-          rack_after: newRack as any
+          board_state_after: game.board_state,
+          rack_after: newRack
         })
 
       if (moveError) throw moveError
@@ -461,7 +458,7 @@ export const useMultiplayerGame = (gameId: string) => {
 
       const newPassCount = (game.pass_count || 0) + 1
 
-      const gameUpdate: any = {
+      const gameUpdate: Partial<GameRecord> = {
         current_player_id: nextPlayerId,
         pass_count: newPassCount,
         updated_at: new Date().toISOString()
@@ -515,7 +512,7 @@ export const useMultiplayerGame = (gameId: string) => {
     if (!game || !user) return null
 
     const isPlayer1 = game.player1_id === user.id
-    const opponent = isPlayer1 ? (game as any).player2 : (game as any).player1
+    const opponent = isPlayer1 ? game.player2 : game.player1
     
     return {
       name: opponent?.display_name || opponent?.username || 'Avversario',
