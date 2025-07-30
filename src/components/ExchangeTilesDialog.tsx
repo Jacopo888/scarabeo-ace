@@ -2,16 +2,15 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { TileRack } from './TileRack'
-import { Tile } from '@/types/game'
+import { Tile } from '@/store/game'
 
 interface ExchangeTilesDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  rack: Tile[]
   onConfirm: (indexes: number[]) => void
 }
 
-export const ExchangeTilesDialog = ({ open, onOpenChange, rack, onConfirm }: ExchangeTilesDialogProps) => {
+export const ExchangeTilesDialog = ({ open, onOpenChange, onConfirm }: ExchangeTilesDialogProps) => {
   const [selected, setSelected] = useState<number[]>([])
 
   const toggleTile = (index: number) => {
@@ -31,7 +30,7 @@ export const ExchangeTilesDialog = ({ open, onOpenChange, rack, onConfirm }: Exc
           <DialogTitle>Exchange Tiles</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <TileRack tiles={rack} selectedTiles={selected} onTileSelect={toggleTile} />
+          <TileRack selectedTiles={selected} onTileSelect={toggleTile} />
           <DialogFooter className="mt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button onClick={handleConfirm} disabled={selected.length === 0}>Confirm</Button>

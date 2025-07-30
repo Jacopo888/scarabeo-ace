@@ -123,10 +123,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
             <Card>
               <CardContent className="p-6">
                 <ScrabbleBoard
-                  placedTiles={gameState.board}
-                  onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
-                  onTilePickup={pickupTile}
-                  pendingTiles={pendingTiles}
                   selectedTile={selectedTile}
                   onUseSelectedTile={clearSelectedTile}
                 />
@@ -154,7 +150,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 </CardHeader>
                 <CardContent>
                   <TileRack
-                    tiles={currentRack as any}
                     selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
                     onTileSelect={handleTileSelect}
                   />
