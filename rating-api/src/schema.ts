@@ -5,6 +5,7 @@ export const players = pgTable('players', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  rating: integer('rating').default(1000).notNull(),
 });
 
 export const games = pgTable('games', {
