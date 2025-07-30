@@ -38,3 +38,7 @@ WITH CHECK (
 -- Create index for better performance
 CREATE INDEX idx_game_chats_game_id ON public.game_chats(game_id);
 CREATE INDEX idx_game_chats_created_at ON public.game_chats(created_at);
+
+-- Enable realtime for game_chats
+ALTER TABLE public.game_chats REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.game_chats;
