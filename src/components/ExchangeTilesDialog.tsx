@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { TileRack } from './TileRack'
-import { Tile } from '@/store/game'
 
 interface ExchangeTilesDialogProps {
   open: boolean

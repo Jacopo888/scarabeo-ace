@@ -11,7 +11,7 @@ createRoot(document.getElementById("root")!).render(
 );
 
 if (import.meta.env.DEV) {
-  import('zustand/middleware').then(m =>
-    m.mountStoreDevtool?.('GameStore', useGameStore)
-  )
+  import('zustand/middleware').then(({ devtools }) => {
+    // Dev tools are already attached via the devtools middleware in the store
+  })
 }

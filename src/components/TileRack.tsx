@@ -1,15 +1,18 @@
 import { ScrabbleTile } from "./ScrabbleTile"
 import { useState } from "react"
-import { useGameStore, type Tile } from '@/store/game'
+import { useGameStore } from '@/store/game'
+import type { Tile } from '@/types/game'
 
 interface TileRackProps {
+  tiles?: Tile[]
   selectedTiles?: number[]
   onTileSelect?: (index: number) => void
   onTileDragStart?: (index: number, tile: Tile) => void
 }
 
-export const TileRack = ({ selectedTiles = [], onTileSelect, onTileDragStart }: TileRackProps) => {
-  const rack = useGameStore(s => s.rack)
+export const TileRack = ({ tiles, selectedTiles = [], onTileSelect, onTileDragStart }: TileRackProps) => {
+  const storeRack = useGameStore(s => s.rack)
+  const rack = tiles || storeRack
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
   return (
     <div className="bg-secondary p-4 rounded-lg shadow-lg">

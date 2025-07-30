@@ -286,7 +286,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
       <ExchangeTilesDialog
         open={exchangeOpen}
         onOpenChange={setExchangeOpen}
-        rack={currentRack as any}
         onConfirm={handleExchange}
       />
     </div>
