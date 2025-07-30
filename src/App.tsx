@@ -12,6 +12,7 @@ import MultiplayerGame from "./pages/MultiplayerGame";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Dictionary from "./pages/Dictionary";
+import Lobby from "./pages/Lobby";
 import NotFound from "./pages/NotFound";
 import { BotProvider } from "./contexts/BotContext";
 import { DictionaryProvider } from "./contexts/DictionaryContext";
@@ -39,6 +40,7 @@ const AppRoutes = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dictionary" element={<Dictionary />} />
+          <Route path="/lobby" element={<Lobby />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
