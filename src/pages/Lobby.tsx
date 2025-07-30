@@ -3,6 +3,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useLobbySocket, LobbyEntry } from '@/hooks/useLobbySocket'
+import { usePlayerRating } from '@/hooks/usePlayerRating'
+
+function LobbyItem({ lobby }: { lobby: LobbyEntry }) {
+  const { rating } = usePlayerRating(lobby.host)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {lobby.host} {rating !== undefined && <span className="text-sm text-muted-foreground">({rating})</span>}
+          {'\'s game'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex items-center justify-between">
+        <span>
+          {lobby.players}/{lobby.maxPlayers} players
+        </span>
+        <Button size="sm">Join</Button>
+      </CardContent>
+    </Card>
+  )
+}
 
 function LobbyList({ lobbies }: { lobbies: LobbyEntry[] }) {
   if (lobbies.length === 0) {
@@ -11,17 +32,7 @@ function LobbyList({ lobbies }: { lobbies: LobbyEntry[] }) {
   return (
     <div className="space-y-4">
       {lobbies.map(lobby => (
-        <Card key={lobby.id}>
-          <CardHeader>
-            <CardTitle>{lobby.host}'s game</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <span>
-              {lobby.players}/{lobby.maxPlayers} players
-            </span>
-            <Button size="sm">Join</Button>
-          </CardContent>
-        </Card>
+        <LobbyItem key={lobby.id} lobby={lobby} />
       ))}
     </div>
   )
