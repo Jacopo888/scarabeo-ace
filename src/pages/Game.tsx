@@ -56,10 +56,6 @@ const GameContent = () => {
           <div className="bg-card p-6 rounded-lg shadow-lg relative">
             <div className="flex justify-center">
               <ScrabbleBoard
-                placedTiles={gameState.board}
-                pendingTiles={pendingTiles}
-                onTilePlaced={(row, col, tile) => placeTile(row, col, tile)}
-                onTilePickup={(row, col) => pickupTile(row, col)}
                 disabled={isBotTurn || currentPlayer.isBot}
                 selectedTile={selectedTile}
                 onUseSelectedTile={clearSelectedTile}
@@ -76,7 +72,6 @@ const GameContent = () => {
             {!currentPlayer.isBot && (
               <div className="mt-6 space-y-4">
                 <TileRack
-                  tiles={currentPlayer.rack}
                   selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
                   onTileSelect={handleTileSelect}
                 />
