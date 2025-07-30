@@ -15,6 +15,8 @@ interface GameStore {
   turn: 'me' | 'opp'
   placeTile: (row: number, col: number, tile: Tile) => void
   drawTiles: (tiles: Tile[]) => void
+  addPoints: (player: 'me' | 'opp', pts: number) => void
+  switchTurn: () => void
   reset: () => void
 }
 
@@ -54,6 +56,24 @@ export const useGameStore = create<GameStore>()(
           'drawTiles'
         ),
 
+      addPoints: (player: 'me' | 'opp', pts: number) =>
+        set(
+          produce((state) => {
+            state.scores[player] += pts
+          }),
+          false,
+          'addPoints'
+        ),
+
+      switchTurn: () =>
+        set(
+          produce((state) => {
+            state.turn = state.turn === 'me' ? 'opp' : 'me'
+          }),
+          false,
+          'switchTurn'
+        ),
+
       reset: () =>
         set(
           produce((state) => {
@@ -68,3 +88,5 @@ export const useGameStore = create<GameStore>()(
     }
   )
 )
+
+export const resetGameStore = () => useGameStore.getState().reset()
