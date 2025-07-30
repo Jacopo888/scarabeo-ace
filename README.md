@@ -19,6 +19,7 @@ Changes made via Lovable will be committed automatically to this repo.
 If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+This project uses npm as its package manager.
 
 Follow these steps:
 
@@ -67,6 +68,25 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+
+## Environment variables
+
+The Supabase client relies on two environment variables:
+
+- `SUPABASE_URL` – URL of your Supabase instance
+- `SUPABASE_PUBLISHABLE_KEY` – the project's public API key
+
+Both variables must be available via Vite's `import.meta.env` system (for
+example by placing them in a `.env` file). The application will throw an error
+at startup if either one is missing.
+
+An `.env.example` file is included in the repository. Copy it to `.env` and
+add your Supabase credentials:
+
+```sh
+cp .env.example .env
+# then edit .env and provide values for SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY
+```
 
 ## How can I deploy this project?
 
