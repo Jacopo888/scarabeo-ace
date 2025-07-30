@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: rating
+      POSTGRES_DB: rating
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+  rating-api:
+    build: ./rating-api
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"

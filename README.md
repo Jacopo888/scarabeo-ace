@@ -107,3 +107,15 @@ When you drag a blank tile onto the board a dialog will appear allowing you to c
 ## Multiplayer end game
 
 The multiplayer mode finishes once the tile bag is empty and a player has no tiles left. When this occurs the remaining tile values in each rack are subtracted from that player's score. See [docs/game_rules.md](docs/game_rules.md) for full details.
+
+## Rating service
+
+A small Express API is provided in `./rating-api`. It exposes a `/ping` endpoint for health checks.
+
+A `docker-compose.yml` is available to start the API together with Postgres and Redis:
+
+```sh
+docker-compose up --build
+```
+
+The API will be accessible at `http://localhost:3000/ping`.
