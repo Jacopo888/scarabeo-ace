@@ -68,6 +68,17 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment variables
+
+The Supabase client relies on two environment variables:
+
+- `SUPABASE_URL` – URL of your Supabase instance
+- `SUPABASE_PUBLISHABLE_KEY` – the project's public API key
+
+Both variables must be available via Vite's `import.meta.env` system (for
+example by placing them in a `.env` file). The application will throw an error
+at startup if either one is missing.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/c72bd105-8134-406f-8d24-e609c43ca3b0) and click on Share -> Publish.
