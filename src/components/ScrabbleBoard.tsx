@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils"
 import { ScrabbleTile } from "./ScrabbleTile"
 import { useState, useEffect, useRef } from "react"
-import { BlankTileDialog } from "./BlankTileDialog"
 
 // Definizioni delle caselle speciali
 const SPECIAL_SQUARES = {
@@ -63,32 +62,26 @@ const getSquareText = (type: string) => {
   }
 }
 
-import { PlacedTile, Tile } from '@/types/game'
+import type { Tile } from '@/store/game'
+import { useGameStore } from '@/store/game'
 
 interface ScrabbleBoardProps {
-  placedTiles?: Map<string, PlacedTile>
-  pendingTiles?: PlacedTile[]
-  onTilePlaced?: (row: number, col: number, tile: PlacedTile) => void
-  onTilePickup?: (row: number, col: number) => void
   disabled?: boolean
   selectedTile?: Tile | null
   onUseSelectedTile?: () => void
 }
 
 export const ScrabbleBoard = ({
-  placedTiles = new Map(),
-  pendingTiles = [],
-  onTilePlaced,
-  onTilePickup,
   disabled = false,
   selectedTile = null,
   onUseSelectedTile
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
-  const [blankTileData, setBlankTileData] = useState<{ row: number; col: number; tile: PlacedTile } | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
   const [boardScale, setBoardScale] = useState(1)
   const [hoverSquare, setHoverSquare] = useState<string | null>(null)
+  const board = useGameStore(s => s.board)
+  const placeTile = useGameStore(s => s.placeTile)
 
   useEffect(() => {
     const updateScale = () => {
@@ -108,27 +101,14 @@ export const ScrabbleBoard = ({
     e.preventDefault()
     setDragOverSquare(null)
     
-    const key = `${row},${col}`
-    if (placedTiles.has(key) || pendingTiles.some(t => t.row === row && t.col === col)) {
-      return // Square already occupied
+    if (board[row][col]) {
+      return
     }
     
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"))
       if (data.source === "rack") {
-        const newTile: PlacedTile = {
-          letter: data.tile.letter,
-          points: data.tile.points,
-          isBlank: data.tile.isBlank,
-          row,
-          col
-        }
-
-        if (newTile.isBlank) {
-          setBlankTileData({ row, col, tile: newTile })
-        } else {
-          onTilePlaced?.(row, col, newTile)
-        }
+        placeTile(row, col, data.tile as Tile)
       }
     } catch (error) {
       console.error("Failed to parse drop data:", error)
@@ -137,7 +117,8 @@ export const ScrabbleBoard = ({
 
   const handleDragOver = (e: React.DragEvent, key: string) => {
     if (disabled) return
-    if (!placedTiles.has(key) && !pendingTiles.some(t => `${t.row},${t.col}` === key)) {
+    const [r, c] = key.split(',').map(Number)
+    if (!board[r][c]) {
       e.preventDefault()
       setDragOverSquare(key)
     }
@@ -151,34 +132,18 @@ export const ScrabbleBoard = ({
     if (disabled) return
     if (!selectedTile) return
 
-    const key = `${row},${col}`
-    if (placedTiles.has(key) || pendingTiles.some(t => t.row === row && t.col === col)) {
+    if (board[row][col]) {
       return
     }
 
-    const newTile: PlacedTile = {
-      letter: selectedTile.letter,
-      points: selectedTile.points,
-      isBlank: selectedTile.isBlank,
-      row,
-      col
-    }
-
-    if (newTile.isBlank) {
-      setBlankTileData({ row, col, tile: newTile })
-    } else {
-      onTilePlaced?.(row, col, newTile)
-    }
-
+    placeTile(row, col, selectedTile)
     onUseSelectedTile?.()
   }
 
   const renderSquare = (row: number, col: number) => {
     const key = `${row},${col}`
     const specialType = SPECIAL_SQUARES[key as keyof typeof SPECIAL_SQUARES]
-    const placedTile = placedTiles.get(key)
-    const pendingTile = pendingTiles.find(t => t.row === row && t.col === col)
-    const currentTile = placedTile || pendingTile
+    const currentTile = board[row][col]
     const isDragOver = dragOverSquare === key
     
     return (
@@ -189,7 +154,6 @@ export const ScrabbleBoard = ({
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
-          pendingTile && "ring-2 ring-yellow-400 bg-yellow-100/20", // Highlight pending tiles
           hoverSquare === key && "square-hover"
         )}
         onDrop={(e) => handleDrop(e, row, col)}
@@ -204,27 +168,12 @@ export const ScrabbleBoard = ({
         }}
       >
         {currentTile ? (
-          <div
-            onClick={() => {
-              if (disabled) return
-              // Allow picking up pending tiles only
-              if (pendingTile && onTilePickup) {
-                onTilePickup(row, col)
-              }
-            }}
-            className={cn(
-              pendingTile && "cursor-pointer"
-            )}
-          >
+          <div>
             <ScrabbleTile
               letter={currentTile.letter}
-              points={currentTile.points}
-              isBlank={currentTile.isBlank}
+              points={('value' in currentTile ? (currentTile as any).value : (currentTile as any).points) as number}
               isOnBoard={true}
-              className={cn(
-                "w-8 h-8 text-[10px]",
-                pendingTile && "border-yellow-400 bg-yellow-50 hover:bg-yellow-100" // Style pending tiles differently
-              )}
+              className="w-8 h-8 text-[10px]"
             />
           </div>
         ) : (
@@ -250,21 +199,6 @@ export const ScrabbleBoard = ({
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
         )}
       </div>
-      <BlankTileDialog
-        open={!!blankTileData}
-        onOpenChange={(open) => {
-          if (!open) setBlankTileData(null)
-        }}
-        onSelect={(letter) => {
-          if (blankTileData) {
-            onTilePlaced?.(blankTileData.row, blankTileData.col, {
-              ...blankTileData.tile,
-              letter,
-            })
-            setBlankTileData(null)
-          }
-        }}
-      />
     </div>
   )
 }
