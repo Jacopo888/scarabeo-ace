@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useGameStore, resetGameStore, type Tile } from '../game'
 
-describe('game store', () => {
-  beforeEach(() => {
-    resetGameStore()
-  })
+beforeEach(() => {
+  resetGameStore()
+})
 
+describe('game store', () => {
   it('adds tiles to rack when drawing', () => {
     const tile: Tile = { id: '1', letter: 'A', value: 1 }
     const prevLength = useGameStore.getState().rack.length
@@ -36,4 +36,3 @@ describe('game store', () => {
     expect(useGameStore.getState().turn).toBe('me')
   })
 })
-
