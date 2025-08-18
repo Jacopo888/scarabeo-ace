@@ -29,8 +29,13 @@ const GameContent = () => {
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
 
-  const selectedTile =
-    selectedTileIndex !== null ? currentPlayer.rack[selectedTileIndex] : null
+  const selectedTile = selectedTileIndex !== null 
+    ? { 
+        ...currentPlayer.rack[selectedTileIndex], 
+        id: `tile-${selectedTileIndex}`, 
+        value: currentPlayer.rack[selectedTileIndex].points 
+      } 
+    : null
 
   const handleTileSelect = (index: number) => {
     if (!isMobile) return

@@ -108,8 +108,8 @@ export const useMultiplayerGame = (gameId: string) => {
         throw error
       }
 
-      setGame(data as GameRecord)
-      updateGameState(data as GameRecord)
+      setGame(data as unknown as GameRecord)
+      updateGameState(data as unknown as GameRecord)
     } catch (error) {
       console.error('Error fetching game:', error)
       toast({
@@ -314,7 +314,7 @@ export const useMultiplayerGame = (gameId: string) => {
       // Update game in database
       const { error: gameError } = await supabase
         .from('games')
-        .update(gameUpdate)
+        .update(gameUpdate as any)
         .eq('id', game.id)
 
       if (gameError) throw gameError
@@ -326,11 +326,11 @@ export const useMultiplayerGame = (gameId: string) => {
           game_id: game.id,
           player_id: user.id,
           move_type: 'place_tiles',
-          tiles_placed: pendingTiles,
-          words_formed: newWords.map(w => w.word),
+          tiles_placed: pendingTiles as any,
+          words_formed: newWords.map(w => w.word) as any,
           score_earned: moveScore,
-          board_state_after: newBoardState,
-          rack_after: newRack,
+          board_state_after: newBoardState as any,
+          rack_after: newRack as any,
         })
 
       if (moveError) throw moveError
@@ -421,7 +421,7 @@ export const useMultiplayerGame = (gameId: string) => {
 
       const { error: gameError } = await supabase
         .from('games')
-        .update(gameUpdate)
+        .update(gameUpdate as any)
         .eq('id', game.id)
 
       if (gameError) throw gameError
@@ -432,10 +432,10 @@ export const useMultiplayerGame = (gameId: string) => {
           game_id: game.id,
           player_id: user.id,
           move_type: 'exchange_tiles',
-          tiles_exchanged: tilesToReturn,
+          tiles_exchanged: tilesToReturn as any,
           score_earned: 0,
-          board_state_after: game.board_state,
-          rack_after: newRack
+          board_state_after: game.board_state as any,
+          rack_after: newRack as any
         })
 
       if (moveError) throw moveError
@@ -487,7 +487,7 @@ export const useMultiplayerGame = (gameId: string) => {
 
       await supabase
         .from('games')
-        .update(gameUpdate)
+        .update(gameUpdate as any)
         .eq('id', game.id)
 
       await supabase
@@ -497,8 +497,8 @@ export const useMultiplayerGame = (gameId: string) => {
           player_id: user.id,
           move_type: 'pass',
           score_earned: 0,
-          board_state_after: game.board_state,
-          rack_after: game.player1_id === user.id ? game.player1_rack : game.player2_rack
+          board_state_after: game.board_state as any,
+          rack_after: (game.player1_id === user.id ? game.player1_rack : game.player2_rack) as any
         })
 
       toast({

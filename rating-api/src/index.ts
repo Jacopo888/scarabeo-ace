@@ -1,16 +1,44 @@
-import express from 'express'
-import { db } from './db'
-import { players, games } from './schema'
-import { eq, desc } from 'drizzle-orm'
-import { createClient } from 'redis'
-import { calculateElo, Mode } from './elo'
+import express from 'express';
+import cors from 'cors';
+import { db } from './db';
+import { players, games } from './schema';
+import { eq, desc } from 'drizzle-orm';
+import { createClient } from 'redis';
+import { calculateElo, Mode } from './elo';
+import { generateRushPuzzle } from './rush/puzzle';
 
-const app = express()
-const port = process.env.PORT || 3000
-app.use(express.json())
+const app = express();
+const port = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.json());
 
-const redis = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' })
-redis.connect().catch((err) => console.error('Redis connect error', err))
+const redis = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+redis.connect().catch((err) => console.error('Redis connect error', err));
+
+// Rush game endpoints
+app.get('/api/rush/new', (req, res) => {
+  try {
+    const puzzle = generateRushPuzzle();
+    res.json(puzzle);
+  } catch (error) {
+    console.error('Error generating puzzle:', error);
+    res.status(500).json({ error: 'Failed to generate puzzle' });
+  }
+});
+
+app.post('/rush/score', (req, res) => {
+  try {
+    const { puzzleId, totalScore } = req.body;
+    if (!puzzleId || typeof totalScore !== 'number') {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+    console.log(`Rush game completed - Puzzle: ${puzzleId}, Score: ${totalScore}`);
+    res.json({ success: true, message: 'Score recorded successfully', puzzleId, totalScore });
+  } catch (error) {
+    console.error('Error recording score:', error);
+    res.status(500).json({ error: 'Failed to record score' });
+  }
+});
 
 app.get('/ping', (_req, res) => {
   res.json({ status: 'ok' });
