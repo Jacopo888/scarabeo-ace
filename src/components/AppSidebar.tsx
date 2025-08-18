@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Home, Play, Users, BarChart3, Settings, Trophy, BookOpen } from "lucide-react"
+import { Home, Play, Users, BarChart3, Settings, Trophy, BookOpen, Zap } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { motion } from "framer-motion"
 
@@ -17,6 +17,7 @@ import {
 
 const items = [
   { title: "Home", url: "/", icon: Home },
+  { title: "Rush", url: "/rush", icon: Zap },
   { title: "Dashboard", url: "/dashboard", icon: Users },
   { title: "Dictionary", url: "/dictionary", icon: BookOpen },
 ]
