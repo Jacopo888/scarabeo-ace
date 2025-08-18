@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useDictionary } from '@/contexts/DictionaryContext'
 import { useToast } from '@/hooks/use-toast'
+import { generateLocalRushPuzzle } from '@/utils/rushPuzzleGenerator'
 
 interface Letter {
   letter: string
@@ -34,10 +35,13 @@ const RushGame = () => {
   const [totalScore, setTotalScore] = useState(0)
   const [isGameOver, setIsGameOver] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLocalGame, setIsLocalGame] = useState(false)
   
   const { timeLeft, isRunning, start, formatTime } = useCountdown()
   const { isValidWord } = useDictionary()
   const { toast } = useToast()
+  
+  const API_BASE = import.meta.env.VITE_RATING_API_URL || ''
 
   useEffect(() => {
     fetchNewPuzzle()
@@ -52,21 +56,47 @@ const RushGame = () => {
   const fetchNewPuzzle = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('http://localhost:3000/api/rush/new')
-      if (!response.ok) throw new Error('Failed to fetch puzzle')
+      setIsLocalGame(false)
       
-      const newPuzzle = await response.json()
-      setPuzzle(newPuzzle)
+      if (API_BASE) {
+        try {
+          const response = await fetch(`${API_BASE}/api/rush/new`)
+          if (!response.ok) throw new Error('Failed to fetch puzzle')
+          
+          const newPuzzle = await response.json()
+          setPuzzle(newPuzzle)
+          setValidWords(new Set())
+          setTotalScore(0)
+          setIsGameOver(false)
+          setCurrentWord('')
+          start(90) // 90 seconds
+          return
+        } catch (apiError) {
+          console.warn('API not available, falling back to local puzzle:', apiError)
+        }
+      }
+      
+      // Fallback to local puzzle generation
+      const localPuzzle = generateLocalRushPuzzle()
+      setPuzzle(localPuzzle)
+      setIsLocalGame(true)
       setValidWords(new Set())
       setTotalScore(0)
       setIsGameOver(false)
       setCurrentWord('')
       start(90) // 90 seconds
+      
+      toast({
+        title: "Playing Offline",
+        description: "Using local puzzle generation. Scores won't be saved.",
+        variant: "default"
+      })
+      
     } catch (error) {
-      console.error('Error fetching puzzle:', error)
+      console.error('Error generating puzzle:', error)
       toast({
         title: "Error",
-        description: "Failed to load new puzzle. Please try again.",
+        description: "Failed to generate puzzle. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -153,14 +183,18 @@ const RushGame = () => {
     
     setIsGameOver(true)
     
-    try {
-      await fetch('http://localhost:3000/rush/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ puzzleId: puzzle.id, totalScore })
-      })
-    } catch (error) {
-      console.error('Error submitting score:', error)
+    if (API_BASE && !isLocalGame) {
+      try {
+        await fetch(`${API_BASE}/rush/score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puzzleId: puzzle.id, totalScore })
+        })
+      } catch (error) {
+        console.error('Error submitting score:', error)
+      }
+    } else {
+      console.log('Local game - score not submitted:', totalScore)
     }
   }
 
