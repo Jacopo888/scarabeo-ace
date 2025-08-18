@@ -15,6 +15,7 @@ import { findNewWordsFormed } from '@/utils/newWordFinder'
 import { calculateNewMoveScore } from '@/utils/newScoring'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Tile, PlacedTile } from '@/types/game'
+import { Tile as StoreTile } from '@/store/game'
 import { RushPuzzle, RushMove, RushGameState } from '@/types/rush'
 import { cn } from '@/lib/utils'
 
@@ -147,12 +148,18 @@ const RushGame = () => {
     // Drag start handled by TileRack component
   }
 
-  const handlePlaceTile = (row: number, col: number, tile: Tile) => {
+  const handlePlaceTile = (row: number, col: number, tile: StoreTile | Tile) => {
     if (gameState.isGameOver) return
+    
+    // Convert StoreTile to GameTile if needed
+    const gameTile: Tile = 'value' in tile 
+      ? { letter: tile.letter, points: tile.value, isBlank: false }
+      : tile as Tile
+    
     
     // Find the tile in remaining rack
     const tileIndex = gameState.remainingRack.findIndex(t => 
-      t.letter === tile.letter && t.points === tile.points
+      t.letter === gameTile.letter && t.points === gameTile.points
     )
     
     if (tileIndex === -1) return
@@ -162,7 +169,7 @@ const RushGame = () => {
     newRack.splice(tileIndex, 1)
     
     const newPendingTile: PlacedTile = {
-      ...tile,
+      ...gameTile,
       row,
       col
     }

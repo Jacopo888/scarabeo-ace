@@ -62,18 +62,18 @@ const getSquareText = (type: string) => {
   }
 }
 
-import type { Tile } from '@/store/game'
-import type { PlacedTile } from '@/types/game'
+import type { Tile as StoreTile } from '@/store/game'
+import type { Tile as GameTile, PlacedTile } from '@/types/game'
 import { useGameStore } from '@/store/game'
 
 interface ScrabbleBoardProps {
   disabled?: boolean
-  selectedTile?: Tile | null
+  selectedTile?: StoreTile | GameTile | null
   onUseSelectedTile?: () => void
   // Rush mode props for controlled usage
   boardMap?: Map<string, PlacedTile>
   pendingTiles?: PlacedTile[]
-  onPlaceTile?: (row: number, col: number, tile: Tile) => void
+  onPlaceTile?: (row: number, col: number, tile: StoreTile | GameTile) => void
   onPickupTile?: (row: number, col: number) => void
 }
 
@@ -126,7 +126,7 @@ export const ScrabbleBoard = ({
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"))
       if (data.source === "rack") {
-        placeTileHandler(row, col, data.tile as Tile)
+        placeTileHandler(row, col, data.tile as StoreTile | GameTile)
       }
     } catch (error) {
       console.error("Failed to parse drop data:", error)
@@ -205,7 +205,7 @@ export const ScrabbleBoard = ({
           <div>
             <ScrabbleTile
               letter={displayTile.letter}
-              points={('value' in displayTile ? (displayTile as any).value : (displayTile as any).points) as number}
+              points={('value' in displayTile ? displayTile.value : displayTile.points) as number}
               isOnBoard={true}
               className={cn(
                 "w-8 h-8 text-[10px]",
