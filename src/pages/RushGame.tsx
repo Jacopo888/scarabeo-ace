@@ -1,45 +1,61 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Timer, Trophy, Zap } from 'lucide-react'
+import { ArrowLeft, Timer, Trophy, Zap, Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useDictionary } from '@/contexts/DictionaryContext'
 import { useToast } from '@/hooks/use-toast'
-import { generateLocalRushPuzzle } from '@/utils/rushPuzzleGenerator'
+import { ScrabbleBoard } from '@/components/ScrabbleBoard'
+import { TileRack } from '@/components/TileRack'
+import { RushTopMoves } from '@/components/RushTopMoves'
+import { generateLocal15x15RushPuzzle } from '@/utils/rushPuzzleGenerator15x15'
+import { validateMoveLogic } from '@/utils/moveValidation'
+import { findNewWordsFormed } from '@/utils/newWordFinder'
+import { calculateNewMoveScore } from '@/utils/newScoring'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Tile, PlacedTile } from '@/types/game'
+import { RushPuzzle, RushMove, RushGameState } from '@/types/rush'
+import { cn } from '@/lib/utils'
 
-interface Letter {
-  letter: string
-  points: number
+function getMoveKey(move: RushMove): string {
+  const sortedTiles = [...move.tiles].sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row
+    return a.col - b.col
+  })
+  return sortedTiles.map(t => `${t.row},${t.col},${t.letter}`).join('|')
 }
 
-interface RushPuzzle {
-  id: string
-  board: (string | null)[][]
-  rack: Letter[]
-  bestScore: number
-}
-
-const LETTER_VALUES: Record<string, number> = {
-  'A': 1, 'B': 3, 'C': 3, 'D': 2, 'E': 1, 'F': 4, 'G': 2, 'H': 4, 'I': 1, 'J': 8,
-  'K': 5, 'L': 1, 'M': 3, 'N': 1, 'O': 1, 'P': 3, 'Q': 10, 'R': 1, 'S': 1, 'T': 1,
-  'U': 1, 'V': 4, 'W': 4, 'X': 8, 'Y': 4, 'Z': 10
+function createMovesFromTiles(tiles: PlacedTile[]): RushMove {
+  const sortedTiles = [...tiles].sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row
+    return a.col - b.col
+  })
+  return {
+    tiles: sortedTiles,
+    words: [], // Will be filled during validation
+    score: 0   // Will be calculated during validation
+  }
 }
 
 const RushGame = () => {
-  const [puzzle, setPuzzle] = useState<RushPuzzle | null>(null)
-  const [currentWord, setCurrentWord] = useState('')
-  const [validWords, setValidWords] = useState<Set<string>>(new Set())
-  const [totalScore, setTotalScore] = useState(0)
-  const [isGameOver, setIsGameOver] = useState(false)
+  const [gameState, setGameState] = useState<RushGameState>({
+    puzzle: null,
+    foundMoves: new Set(),
+    pendingTiles: [],
+    remainingRack: [],
+    isGameOver: false,
+    totalScore: 0
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isLocalGame, setIsLocalGame] = useState(false)
+  const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+  const [initialBoard, setInitialBoard] = useState<Map<string, PlacedTile>>(new Map())
   
   const { timeLeft, isRunning, start, formatTime } = useCountdown()
-  const { isValidWord } = useDictionary()
+  const { isValidWord, isLoaded: isDictionaryLoaded } = useDictionary()
   const { toast } = useToast()
+  const isMobile = useIsMobile()
   
   const API_BASE = import.meta.env.VITE_RATING_API_URL || ''
 
@@ -63,13 +79,8 @@ const RushGame = () => {
           const response = await fetch(`${API_BASE}/api/rush/new`)
           if (!response.ok) throw new Error('Failed to fetch puzzle')
           
-          const newPuzzle = await response.json()
-          setPuzzle(newPuzzle)
-          setValidWords(new Set())
-          setTotalScore(0)
-          setIsGameOver(false)
-          setCurrentWord('')
-          start(90) // 90 seconds
+          const puzzle: RushPuzzle = await response.json()
+          initializePuzzle(puzzle)
           return
         } catch (apiError) {
           console.warn('API not available, falling back to local puzzle:', apiError)
@@ -77,14 +88,18 @@ const RushGame = () => {
       }
       
       // Fallback to local puzzle generation
-      const localPuzzle = generateLocalRushPuzzle()
-      setPuzzle(localPuzzle)
+      if (!isDictionaryLoaded) {
+        toast({
+          title: "Loading Dictionary",
+          description: "Please wait for the dictionary to load...",
+          variant: "default"
+        })
+        return
+      }
+      
+      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
+      initializePuzzle(localPuzzle)
       setIsLocalGame(true)
-      setValidWords(new Set())
-      setTotalScore(0)
-      setIsGameOver(false)
-      setCurrentWord('')
-      start(90) // 90 seconds
       
       toast({
         title: "Playing Offline",
@@ -104,109 +119,201 @@ const RushGame = () => {
     }
   }
 
-  const calculateWordScore = (word: string): number => {
-    return word.split('').reduce((sum, letter) => sum + (LETTER_VALUES[letter] || 0), 0)
-  }
-
-  const canFormWord = (word: string): boolean => {
-    if (!puzzle) return false
-    
-    const available = [...puzzle.rack]
-    const boardLetters: string[] = []
-    
-    // Get letters from board
-    puzzle.board.forEach(row => {
-      row.forEach(cell => {
-        if (cell) boardLetters.push(cell)
-      })
+  const initializePuzzle = (puzzle: RushPuzzle) => {
+    // Convert board array to Map for efficient lookups
+    const boardMap = new Map<string, PlacedTile>()
+    puzzle.board.forEach(tile => {
+      boardMap.set(`${tile.row},${tile.col}`, tile)
     })
     
-    const allAvailable = [...available.map(t => t.letter), ...boardLetters]
-    const needed = word.split('')
-    
-    for (const letter of needed) {
-      const index = allAvailable.findIndex(l => l === letter)
-      if (index === -1) return false
-      allAvailable.splice(index, 1)
-    }
-    
-    return true
+    setInitialBoard(boardMap)
+    setGameState({
+      puzzle,
+      foundMoves: new Set(),
+      pendingTiles: [],
+      remainingRack: [...puzzle.rack],
+      isGameOver: false,
+      totalScore: 0
+    })
+    start(90) // 90 seconds
   }
 
-  const submitWord = async () => {
-    if (!puzzle || currentWord.length < 2) return
+  const handleTileSelect = (index: number) => {
+    if (gameState.isGameOver) return
+    setSelectedTileIndex(selectedTileIndex === index ? null : index)
+  }
+
+  const handleTileDragStart = (index: number, tile: Tile) => {
+    // Drag start handled by TileRack component
+  }
+
+  const handlePlaceTile = (row: number, col: number, tile: Tile) => {
+    if (gameState.isGameOver) return
     
-    const word = currentWord.toUpperCase()
+    // Find the tile in remaining rack
+    const tileIndex = gameState.remainingRack.findIndex(t => 
+      t.letter === tile.letter && t.points === tile.points
+    )
     
-    // Check if already used
-    if (validWords.has(word)) {
+    if (tileIndex === -1) return
+    
+    // Remove tile from rack and add to pending
+    const newRack = [...gameState.remainingRack]
+    newRack.splice(tileIndex, 1)
+    
+    const newPendingTile: PlacedTile = {
+      ...tile,
+      row,
+      col
+    }
+    
+    setGameState(prev => ({
+      ...prev,
+      remainingRack: newRack,
+      pendingTiles: [...prev.pendingTiles, newPendingTile]
+    }))
+    
+    setSelectedTileIndex(null)
+  }
+
+  const handlePickupTile = (row: number, col: number) => {
+    if (gameState.isGameOver) return
+    
+    // Find pending tile at this position
+    const tileIndex = gameState.pendingTiles.findIndex(t => t.row === row && t.col === col)
+    if (tileIndex === -1) return
+    
+    const pickedTile = gameState.pendingTiles[tileIndex]
+    const newPendingTiles = [...gameState.pendingTiles]
+    newPendingTiles.splice(tileIndex, 1)
+    
+    // Return tile to rack
+    const { row: _, col: __, ...rackTile } = pickedTile
+    
+    setGameState(prev => ({
+      ...prev,
+      remainingRack: [...prev.remainingRack, rackTile],
+      pendingTiles: newPendingTiles
+    }))
+  }
+
+  const submitMove = async () => {
+    if (!gameState.puzzle || gameState.pendingTiles.length === 0) return
+    
+    // Validate move
+    const validation = validateMoveLogic(initialBoard, gameState.pendingTiles)
+    if (!validation.isValid) {
       toast({
-        title: "Already Used",
-        description: "You've already found this word!",
+        title: "Invalid Move",
+        description: validation.errors[0],
         variant: "destructive"
       })
       return
     }
     
-    // Check if can be formed
-    if (!canFormWord(word)) {
+    // Find words formed
+    const newWords = findNewWordsFormed(initialBoard, gameState.pendingTiles)
+    if (newWords.length === 0) {
       toast({
-        title: "Invalid Word",
-        description: "Cannot form this word with available letters",
+        title: "No Words Found",
+        description: "Your move must form at least one word",
         variant: "destructive"
       })
       return
     }
     
-    // Check dictionary
-    if (await isValidWord(word)) {
-      const score = calculateWordScore(word)
-      setValidWords(prev => new Set([...prev, word]))
-      setTotalScore(prev => prev + score)
-      setCurrentWord('')
+    // Validate words in dictionary
+    const invalidWords = newWords.filter(w => !isValidWord(w.word))
+    if (invalidWords.length > 0) {
+      toast({
+        title: "Invalid Words",
+        description: `"${invalidWords[0].word}" is not in the dictionary`,
+        variant: "destructive"
+      })
+      return
+    }
+    
+    // Calculate score
+    const score = calculateNewMoveScore(newWords, gameState.pendingTiles)
+    
+    // Create move key and check if it matches any top move
+    const userMove = createMovesFromTiles(gameState.pendingTiles)
+    userMove.words = newWords.map(w => w.word)
+    userMove.score = score
+    const userMoveKey = getMoveKey(userMove)
+    
+    // Check if this move is in the top 5
+    const matchingMove = gameState.puzzle.topMoves.find(move => {
+      const topMoveKey = getMoveKey(move)
+      return topMoveKey === userMoveKey
+    })
+    
+    if (matchingMove && !gameState.foundMoves.has(userMoveKey)) {
+      // Correct move found!
+      setGameState(prev => ({
+        ...prev,
+        foundMoves: new Set([...prev.foundMoves, userMoveKey]),
+        totalScore: prev.totalScore + matchingMove.score,
+        pendingTiles: [],
+        remainingRack: [...gameState.puzzle!.rack] // Reset rack
+      }))
       
       toast({
-        title: "Great Word!",
-        description: `"${word}" is worth ${score} points!`,
+        title: "Great Move!",
+        description: `Found "${matchingMove.words.join(', ')}" for ${matchingMove.score} points!`,
+        variant: "default"
       })
+      
+      // Check if all moves found
+      if (gameState.foundMoves.size + 1 >= gameState.puzzle.topMoves.length) {
+        setTimeout(() => endGame(), 1000)
+      }
     } else {
       toast({
-        title: "Invalid Word",
-        description: "Word not found in dictionary",
+        title: "Not a Top Move",
+        description: `"${newWords.map(w => w.word).join(', ')}" (${score} pts) is not one of the top 5 moves`,
         variant: "destructive"
       })
     }
+  }
+
+  const cancelMove = () => {
+    if (gameState.isGameOver || !gameState.puzzle) return
+    
+    setGameState(prev => ({
+      ...prev,
+      pendingTiles: [],
+      remainingRack: [...gameState.puzzle!.rack]
+    }))
+    setSelectedTileIndex(null)
   }
 
   const endGame = async () => {
-    if (!puzzle || isGameOver) return
+    if (!gameState.puzzle || gameState.isGameOver) return
     
-    setIsGameOver(true)
+    setGameState(prev => ({ ...prev, isGameOver: true }))
     
     if (API_BASE && !isLocalGame) {
       try {
         await fetch(`${API_BASE}/rush/score`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ puzzleId: puzzle.id, totalScore })
+          body: JSON.stringify({ 
+            puzzleId: gameState.puzzle.id, 
+            totalScore: gameState.totalScore 
+          })
         })
       } catch (error) {
         console.error('Error submitting score:', error)
       }
     } else {
-      console.log('Local game - score not submitted:', totalScore)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isGameOver) {
-      submitWord()
+      console.log('Local game - score not submitted:', gameState.totalScore)
     }
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-6xl">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Zap className="h-12 w-12 mx-auto mb-4 animate-pulse text-primary" />
@@ -217,9 +324,9 @@ const RushGame = () => {
     )
   }
 
-  if (!puzzle) {
+  if (!gameState.puzzle) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-6xl">
         <div className="text-center">
           <p className="text-lg mb-4">Failed to load puzzle</p>
           <Button onClick={fetchNewPuzzle}>Try Again</Button>
@@ -228,8 +335,10 @@ const RushGame = () => {
     )
   }
 
+  const selectedTile = selectedTileIndex !== null ? gameState.remainingRack[selectedTileIndex] : null
+
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6 flex items-center gap-4">
         <Link to="/">
           <Button variant="outline" size="sm">
@@ -243,9 +352,9 @@ const RushGame = () => {
         </h1>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Game Area */}
-        <div className="space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Timer and Score */}
           <div className="flex gap-4">
             <Card className="flex-1">
@@ -262,131 +371,79 @@ const RushGame = () => {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-primary" />
-                  <span className="text-2xl font-bold">{totalScore}</span>
+                  <span className="text-2xl font-bold">{gameState.totalScore}</span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Board */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Board Letters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto">
-                {puzzle.board.map((row, i) =>
-                  row.map((cell, j) => (
-                    <div
-                      key={`${i}-${j}`}
-                      className="aspect-square border-2 rounded-lg flex items-center justify-center text-lg font-bold bg-muted"
-                    >
-                      {cell || ''}
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex justify-center">
+            <ScrabbleBoard
+              disabled={gameState.isGameOver}
+              selectedTile={selectedTile}
+              onUseSelectedTile={() => setSelectedTileIndex(null)}
+              boardMap={initialBoard}
+              pendingTiles={gameState.pendingTiles}
+              onPlaceTile={handlePlaceTile}
+              onPickupTile={handlePickupTile}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 justify-center">
+            <Button 
+              onClick={submitMove}
+              disabled={gameState.isGameOver || gameState.pendingTiles.length === 0}
+              size="lg"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Submit Move
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={cancelMove}
+              disabled={gameState.isGameOver || gameState.pendingTiles.length === 0}
+              size="lg"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
 
           {/* Rack */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Your Tiles</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 flex-wrap justify-center">
-                {puzzle.rack.map((tile, i) => (
-                  <div
-                    key={i}
-                    className="w-12 h-12 border-2 rounded-lg flex flex-col items-center justify-center text-sm font-bold bg-card"
-                  >
-                    <span>{tile.letter}</span>
-                    <span className="text-xs text-muted-foreground">{tile.points}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <TileRack
+            tiles={gameState.remainingRack}
+            selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
+            onTileSelect={handleTileSelect}
+            onTileDragStart={handleTileDragStart}
+          />
 
-        {/* Input and Words */}
-        <div className="space-y-6">
-          {/* Word Input */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Enter Words</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={currentWord}
-                  onChange={(e) => setCurrentWord(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a word..."
-                  disabled={isGameOver}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={submitWord} 
-                  disabled={isGameOver || currentWord.length < 2}
-                >
-                  Submit
-                </Button>
-              </div>
-              {isGameOver && (
-                <Button onClick={fetchNewPuzzle} className="w-full">
+          {/* Game Over */}
+          {gameState.isGameOver && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <h3 className="text-2xl font-bold mb-4">Game Over!</h3>
+                <p className="text-lg mb-4">
+                  You found {gameState.foundMoves.size} out of {gameState.puzzle.topMoves.length} top moves
+                </p>
+                <p className="text-xl font-semibold mb-4">
+                  Final Score: {gameState.totalScore} points
+                </p>
+                <Button onClick={fetchNewPuzzle} size="lg">
                   New Puzzle
                 </Button>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-          {/* Found Words */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                Found Words ({validWords.size})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto">
-                {Array.from(validWords).map((word) => (
-                  <Badge key={word} variant="secondary" className="text-sm">
-                    {word} ({calculateWordScore(word)}pts)
-                  </Badge>
-                ))}
-              </div>
-              {validWords.size === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  No words found yet. Start typing!
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Game Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Puzzle Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span>Target Score:</span>
-                <span className="font-semibold">{puzzle.bestScore}pts</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Your Score:</span>
-                <span className="font-semibold">{totalScore}pts</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Progress:</span>
-                <span className="font-semibold">
-                  {Math.round((totalScore / puzzle.bestScore) * 100)}%
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <RushTopMoves 
+            topMoves={gameState.puzzle.topMoves}
+            foundMoves={gameState.foundMoves}
+          />
         </div>
       </div>
     </div>

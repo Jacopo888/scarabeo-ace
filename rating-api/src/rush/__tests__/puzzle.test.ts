@@ -7,32 +7,41 @@ describe('Rush Puzzle Generator', () => {
     expect(puzzle).toHaveProperty('id')
     expect(puzzle).toHaveProperty('board')
     expect(puzzle).toHaveProperty('rack')
-    expect(puzzle).toHaveProperty('bestScore')
+    expect(puzzle).toHaveProperty('topMoves')
     
     expect(typeof puzzle.id).toBe('string')
     expect(puzzle.id.length).toBeGreaterThan(0)
   })
   
-  test('should generate 5x5 board', () => {
+  test('should generate 15x15 board positions', () => {
     const puzzle = generateRushPuzzle()
     
-    expect(puzzle.board).toHaveLength(5)
-    puzzle.board.forEach(row => {
-      expect(row).toHaveLength(5)
+    expect(Array.isArray(puzzle.board)).toBe(true)
+    puzzle.board.forEach(tile => {
+      expect(tile.row).toBeGreaterThanOrEqual(0)
+      expect(tile.row).toBeLessThan(15)
+      expect(tile.col).toBeGreaterThanOrEqual(0)
+      expect(tile.col).toBeLessThan(15)
     })
   })
   
-  test('should generate rack with 7 tiles or less', () => {
+  test('should generate rack with 7 tiles', () => {
     const puzzle = generateRushPuzzle()
     
-    expect(puzzle.rack.length).toBeLessThanOrEqual(7)
-    expect(puzzle.rack.length).toBeGreaterThan(0)
+    expect(puzzle.rack.length).toBe(7)
   })
   
-  test('should ensure bestScore is at least 40', () => {
+  test('should generate top moves with at least 3 moves', () => {
     const puzzle = generateRushPuzzle()
     
-    expect(puzzle.bestScore).toBeGreaterThanOrEqual(40)
+    expect(puzzle.topMoves.length).toBeGreaterThanOrEqual(3)
+    expect(puzzle.topMoves.length).toBeLessThanOrEqual(5)
+  })
+  
+  test('should ensure top move score is at least 50', () => {
+    const puzzle = generateRushPuzzle()
+    
+    expect(puzzle.topMoves[0].score).toBeGreaterThanOrEqual(50)
   })
   
   test('rack tiles should have valid letter and points', () => {
@@ -42,6 +51,17 @@ describe('Rush Puzzle Generator', () => {
       expect(typeof tile.letter).toBe('string')
       expect(typeof tile.points).toBe('number')
       expect(tile.points).toBeGreaterThanOrEqual(0)
+    })
+  })
+  
+  test('top moves should have valid structure', () => {
+    const puzzle = generateRushPuzzle()
+    
+    puzzle.topMoves.forEach(move => {
+      expect(Array.isArray(move.tiles)).toBe(true)
+      expect(Array.isArray(move.words)).toBe(true)
+      expect(typeof move.score).toBe('number')
+      expect(move.score).toBeGreaterThan(0)
     })
   })
   
