@@ -18,6 +18,9 @@ interface RushMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
+  anchorCell?: { row: number, col: number }
+  mainWordLength?: number
+  lettersUsed?: string[]
 }
 
 interface RushPuzzle {
@@ -48,15 +51,15 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-function generateInitialBoard(tileBag: Tile[]): { board: Map<string, PlacedTile>, usedTiles: number } {
+function generateConnectedBoard(tileBag: Tile[]): { board: Map<string, PlacedTile>, usedTiles: number } {
   const board = new Map<string, PlacedTile>()
   let usedTiles = 0
 
-  // Start with a word at center
-  const centerWords = ['GAME', 'PLAY', 'WORD', 'QUIZ', 'STAR']
+  // Start with a word at center (horizontally)
+  const centerWords = ['GAME', 'PLAY', 'WORD', 'QUIZ', 'STAR', 'TEAM']
   const word = centerWords[Math.floor(Math.random() * centerWords.length)]
-  
   const startCol = 7 - Math.floor(word.length / 2)
+  
   for (let i = 0; i < word.length; i++) {
     const letter = word[i]
     const tileIndex = tileBag.findIndex(t => t.letter === letter)
@@ -72,36 +75,52 @@ function generateInitialBoard(tileBag: Tile[]): { board: Map<string, PlacedTile>
     }
   }
 
-  // Add 1-2 more crossing words
-  const crossingAttempts = [
-    { row: 5, col: 7, word: 'CAT', direction: 'vertical' },
-    { row: 9, col: 7, word: 'DOG', direction: 'vertical' },
-    { row: 7, col: 5, word: 'TOP', direction: 'horizontal' }
+  // Add crossing words that connect properly
+  const crossWords = [
+    { word: 'CAT', row: 5, col: 7, direction: 'vertical' },
+    { word: 'DOG', row: 8, col: 7, direction: 'vertical' },
+    { word: 'TOP', row: 7, col: 4, direction: 'horizontal' },
+    { word: 'SUN', row: 6, col: 8, direction: 'vertical' },
+    { word: 'RUN', row: 7, col: 10, direction: 'horizontal' }
   ]
-
-  for (const attempt of crossingAttempts.slice(0, 2)) {
-    if (Math.random() > 0.5) continue // Randomly skip some
-    
+  
+  // Place 2-3 crossing words that actually connect
+  const selectedCrossWords = shuffleArray(crossWords).slice(0, Math.random() > 0.5 ? 3 : 2)
+  
+  for (const cross of selectedCrossWords) {
     let canPlace = true
-    const positions: Array<{row: number, col: number, letter: string}> = []
+    const newPositions: Array<{row: number, col: number, letter: string}> = []
     
-    for (let i = 0; i < attempt.word.length; i++) {
-      const row = attempt.direction === 'vertical' ? attempt.row + i : attempt.row
-      const col = attempt.direction === 'horizontal' ? attempt.col + i : attempt.col
+    for (let i = 0; i < cross.word.length; i++) {
+      const row = cross.direction === 'vertical' ? cross.row + i : cross.row
+      const col = cross.direction === 'horizontal' ? cross.col + i : cross.col
       
-      const existing = board.get(`${row},${col}`)
-      if (existing && existing.letter !== attempt.word[i]) {
+      if (row < 0 || row >= 15 || col < 0 || col >= 15) {
         canPlace = false
         break
       }
       
-      if (!existing) {
-        positions.push({ row, col, letter: attempt.word[i] })
+      const existing = board.get(`${row},${col}`)
+      if (existing) {
+        // Must match for crossing
+        if (existing.letter !== cross.word[i]) {
+          canPlace = false
+          break
+        }
+      } else {
+        newPositions.push({ row, col, letter: cross.word[i] })
       }
     }
     
-    if (canPlace) {
-      for (const pos of positions) {
+    // Ensure at least one connection
+    const hasConnection = cross.word.split('').some((letter, i) => {
+      const row = cross.direction === 'vertical' ? cross.row + i : cross.row
+      const col = cross.direction === 'horizontal' ? cross.col + i : cross.col
+      return board.has(`${row},${col}`)
+    })
+    
+    if (canPlace && hasConnection) {
+      for (const pos of newPositions) {
         const tileIndex = tileBag.findIndex(t => t.letter === pos.letter)
         if (tileIndex >= 0) {
           const tile = tileBag.splice(tileIndex, 1)[0]
@@ -171,10 +190,23 @@ function generateTopMoves(board: Map<string, PlacedTile>, rack: Tile[]): RushMov
     }
   }
   
-  // Sort by score and return top 5
+  // Sort by score and return top 5 with hints
   return moves
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
+    .map(move => {
+      // Calculate hints for this move
+      const anchorCell = move.tiles.length > 0 ? { row: move.tiles[0].row, col: move.tiles[0].col } : undefined
+      const mainWord = move.words.length > 0 ? move.words[0] : ''
+      const lettersUsed = move.tiles.map(tile => tile.letter).sort()
+      
+      return {
+        ...move,
+        anchorCell,
+        mainWordLength: mainWord.length,
+        lettersUsed
+      }
+    })
 }
 
 function findAdjacentPositions(board: Map<string, PlacedTile>): Array<[number, number]> {
@@ -233,7 +265,7 @@ export function generateRushPuzzle(): RushPuzzle {
   
   while (attempts < maxAttempts) {
     const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-    const { board, usedTiles } = generateInitialBoard(tileBag)
+    const { board, usedTiles } = generateConnectedBoard(tileBag)
     
     // Generate rack from remaining tiles
     const rack = tileBag.splice(0, 7)
@@ -258,7 +290,7 @@ export function generateRushPuzzle(): RushPuzzle {
   
   // Fallback: generate basic puzzle
   const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-  const { board } = generateInitialBoard(tileBag)
+  const { board } = generateConnectedBoard(tileBag)
   const rack = tileBag.splice(0, 7)
   
   return {

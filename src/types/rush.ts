@@ -4,6 +4,9 @@ export interface RushMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
+  anchorCell?: { row: number, col: number }
+  mainWordLength?: number
+  lettersUsed?: string[]
 }
 
 export interface RushPuzzle {
@@ -20,4 +23,10 @@ export interface RushGameState {
   remainingRack: Tile[]
   isGameOver: boolean
   totalScore: number
+  hints: {
+    currentMoveIndex: number
+    anchorRevealed: boolean
+    lengthRevealed: boolean
+    lettersRevealed: boolean
+  }
 }

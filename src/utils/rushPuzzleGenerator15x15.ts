@@ -17,11 +17,12 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-function generateInitialBoard(tileBag: Tile[]): Map<string, PlacedTile> {
+function generateConnectedBoard(tileBag: Tile[]): Map<string, PlacedTile> {
   const board = new Map<string, PlacedTile>()
 
-  // Start with a word at center
-  const word = BASIC_WORDS[Math.floor(Math.random() * BASIC_WORDS.length)]
+  // Start with a word at center (horizontally)
+  const centerWords = ['GAME', 'PLAY', 'WORD', 'QUIZ', 'STAR', 'TEAM']
+  const word = centerWords[Math.floor(Math.random() * centerWords.length)]
   const startCol = 7 - Math.floor(word.length / 2)
   
   for (let i = 0; i < word.length; i++) {
@@ -38,33 +39,109 @@ function generateInitialBoard(tileBag: Tile[]): Map<string, PlacedTile> {
     }
   }
 
-  // Add one crossing word
-  const crossWords = ['CAT', 'DOG', 'TOP', 'RUN', 'SUN']
-  const crossWord = crossWords[Math.floor(Math.random() * crossWords.length)]
+  // Add crossing words that connect properly
+  const crossWords = [
+    { word: 'CAT', row: 5, col: 7, direction: 'vertical' },
+    { word: 'DOG', row: 8, col: 7, direction: 'vertical' },
+    { word: 'TOP', row: 7, col: 4, direction: 'horizontal' },
+    { word: 'SUN', row: 6, col: 8, direction: 'vertical' },
+    { word: 'RUN', row: 7, col: 10, direction: 'horizontal' }
+  ]
   
-  // Place vertically crossing the center word
-  const crossCol = 7
-  const crossStartRow = 9
+  // Place 2-3 crossing words that actually connect
+  const selectedCrossWords = shuffleArray(crossWords).slice(0, Math.random() > 0.5 ? 3 : 2)
   
-  for (let i = 0; i < crossWord.length; i++) {
-    const row = crossStartRow + i
-    if (row >= 15) break
+  for (const cross of selectedCrossWords) {
+    let canPlace = true
+    const newPositions: Array<{row: number, col: number, letter: string}> = []
     
-    const letter = crossWord[i]
-    if (!board.has(`${row},${crossCol}`)) {
-      const tileIndex = tileBag.findIndex(t => t.letter === letter)
-      if (tileIndex >= 0) {
-        const tile = tileBag.splice(tileIndex, 1)[0]
-        board.set(`${row},${crossCol}`, {
-          ...tile,
-          letter,
-          row,
-          col: crossCol
-        })
+    for (let i = 0; i < cross.word.length; i++) {
+      const row = cross.direction === 'vertical' ? cross.row + i : cross.row
+      const col = cross.direction === 'horizontal' ? cross.col + i : cross.col
+      
+      if (row < 0 || row >= 15 || col < 0 || col >= 15) {
+        canPlace = false
+        break
+      }
+      
+      const existing = board.get(`${row},${col}`)
+      if (existing) {
+        // Must match for crossing
+        if (existing.letter !== cross.word[i]) {
+          canPlace = false
+          break
+        }
+      } else {
+        newPositions.push({ row, col, letter: cross.word[i] })
+      }
+    }
+    
+    // Ensure at least one connection
+    const hasConnection = cross.word.split('').some((letter, i) => {
+      const row = cross.direction === 'vertical' ? cross.row + i : cross.row
+      const col = cross.direction === 'horizontal' ? cross.col + i : cross.col
+      return board.has(`${row},${col}`)
+    })
+    
+    if (canPlace && hasConnection) {
+      for (const pos of newPositions) {
+        const tileIndex = tileBag.findIndex(t => t.letter === pos.letter)
+        if (tileIndex >= 0) {
+          const tile = tileBag.splice(tileIndex, 1)[0]
+          board.set(`${pos.row},${pos.col}`, {
+            ...tile,
+            letter: pos.letter,
+            row: pos.row,
+            col: pos.col
+          })
+        }
       }
     }
   }
 
+  // Simulate additional moves to make it look mid-game
+  return simulateAdditionalMoves(board, tileBag)
+}
+
+function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[]): Map<string, PlacedTile> {
+  const bot = new ScrabbleBot((word) => true, true) // Accept all words for simulation
+  
+  for (let moveCount = 0; moveCount < 2; moveCount++) {
+    const currentRack = tileBag.splice(0, 7)
+    if (currentRack.length < 3) break
+    
+    const gameState = {
+      board,
+      players: [],
+      currentPlayerIndex: 0,
+      tileBag: [],
+      gameStatus: 'playing' as const
+    }
+    
+    const moves = bot.generateAllPossibleMoves(gameState, currentRack)
+    const validMoves = moves.filter(move => move.score >= 15 && move.tiles.length >= 2)
+    
+    if (validMoves.length > 0) {
+      const selectedMove = validMoves[Math.floor(Math.random() * Math.min(3, validMoves.length))]
+      
+      // Place the move on the board
+      for (const tile of selectedMove.tiles) {
+        board.set(`${tile.row},${tile.col}`, tile)
+      }
+      
+      // Remove used tiles from rack
+      for (const usedTile of selectedMove.tiles) {
+        const rackIndex = currentRack.findIndex(t => t.letter === usedTile.letter && t.points === usedTile.points)
+        if (rackIndex >= 0) {
+          currentRack.splice(rackIndex, 1)
+        }
+      }
+    }
+    
+    // Return unused tiles to bag
+    tileBag.unshift(...currentRack)
+  }
+  
   return board
 }
 
@@ -100,11 +177,21 @@ function generateTopMovesWithBot(
     .filter(move => move.score >= 30)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map(move => ({
-      tiles: move.tiles,
-      words: move.words,
-      score: move.score
-    }))
+    .map(move => {
+      // Calculate hints for this move
+      const anchorCell = move.tiles.length > 0 ? { row: move.tiles[0].row, col: move.tiles[0].col } : undefined
+      const mainWord = move.words.length > 0 ? move.words[0] : ''
+      const lettersUsed = move.tiles.map(tile => tile.letter).sort()
+      
+      return {
+        tiles: move.tiles,
+        words: move.words,
+        score: move.score,
+        anchorCell,
+        mainWordLength: mainWord.length,
+        lettersUsed
+      }
+    })
 }
 
 export function generateLocal15x15RushPuzzle(
@@ -116,7 +203,7 @@ export function generateLocal15x15RushPuzzle(
   
   while (attempts < maxAttempts) {
     const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-    const board = generateInitialBoard(tileBag)
+    const board = generateConnectedBoard(tileBag)
     const rack = tileBag.splice(0, 7)
     
     const topMoves = generateTopMovesWithBot(board, rack, isValidWord, isDictionaryLoaded)
@@ -135,7 +222,7 @@ export function generateLocal15x15RushPuzzle(
   
   // Fallback
   const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-  const board = generateInitialBoard(tileBag)
+  const board = generateConnectedBoard(tileBag)
   const rack = tileBag.splice(0, 7)
   
   return {

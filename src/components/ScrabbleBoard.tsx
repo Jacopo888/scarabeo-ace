@@ -75,6 +75,7 @@ interface ScrabbleBoardProps {
   pendingTiles?: PlacedTile[]
   onPlaceTile?: (row: number, col: number, tile: StoreTile | GameTile) => void
   onPickupTile?: (row: number, col: number) => void
+  highlightSquares?: Array<{row: number, col: number, type: 'anchor' | 'hint'}>
 }
 
 export const ScrabbleBoard = ({
@@ -84,7 +85,8 @@ export const ScrabbleBoard = ({
   boardMap,
   pendingTiles = [],
   onPlaceTile,
-  onPickupTile
+  onPickupTile,
+  highlightSquares = []
 }: ScrabbleBoardProps) => {
   const [dragOverSquare, setDragOverSquare] = useState<string | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
@@ -178,6 +180,9 @@ export const ScrabbleBoard = ({
     
     const isDragOver = dragOverSquare === key
     
+    // Check if this square should be highlighted
+    const highlight = highlightSquares.find(h => h.row === row && h.col === col)
+    
     return (
       <div
         key={key}
@@ -186,7 +191,9 @@ export const ScrabbleBoard = ({
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
-          hoverSquare === key && "square-hover"
+          hoverSquare === key && "square-hover",
+          highlight?.type === 'anchor' && "ring-2 ring-yellow-400 bg-yellow-100/50",
+          highlight?.type === 'hint' && "ring-2 ring-blue-400 bg-blue-100/50"
         )}
         onDrop={(e) => handleDrop(e, row, col)}
         onDragOver={(e) => handleDragOver(e, key)}

@@ -46,7 +46,13 @@ const RushGame = () => {
     pendingTiles: [],
     remainingRack: [],
     isGameOver: false,
-    totalScore: 0
+    totalScore: 0,
+    hints: {
+      currentMoveIndex: 0,
+      anchorRevealed: false,
+      lengthRevealed: false,
+      lettersRevealed: false
+    }
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isLocalGame, setIsLocalGame] = useState(false)
@@ -134,7 +140,13 @@ const RushGame = () => {
       pendingTiles: [],
       remainingRack: [...puzzle.rack],
       isGameOver: false,
-      totalScore: 0
+      totalScore: 0,
+      hints: {
+        currentMoveIndex: 0,
+        anchorRevealed: false,
+        lengthRevealed: false,
+        lettersRevealed: false
+      }
     })
     start(90) // 90 seconds
   }
@@ -257,13 +269,26 @@ const RushGame = () => {
     
     if (matchingMove && !gameState.foundMoves.has(userMoveKey)) {
       // Correct move found!
-      setGameState(prev => ({
-        ...prev,
-        foundMoves: new Set([...prev.foundMoves, userMoveKey]),
-        totalScore: prev.totalScore + matchingMove.score,
-        pendingTiles: [],
-        remainingRack: [...gameState.puzzle!.rack] // Reset rack
-      }))
+      setGameState(prev => {
+        const newFoundMoves = new Set([...prev.foundMoves, userMoveKey])
+        const nextUnfoundIndex = prev.puzzle?.topMoves.findIndex((move, index) => 
+          !newFoundMoves.has(getMoveKey(move))
+        ) ?? 0
+        
+        return {
+          ...prev,
+          foundMoves: newFoundMoves,
+          pendingTiles: [],
+          remainingRack: [...gameState.puzzle!.rack], // Reset rack
+          totalScore: prev.totalScore + matchingMove.score,
+          hints: {
+            currentMoveIndex: nextUnfoundIndex,
+            anchorRevealed: false,
+            lengthRevealed: false,
+            lettersRevealed: false
+          }
+        }
+      })
       
       toast({
         title: "Great Move!",
@@ -316,6 +341,43 @@ const RushGame = () => {
     } else {
       console.log('Local game - score not submitted:', gameState.totalScore)
     }
+  }
+
+  // Hint functions
+  const revealAnchor = () => {
+    setGameState(prev => ({
+      ...prev,
+      hints: { ...prev.hints, anchorRevealed: true }
+    }))
+  }
+
+  const revealLength = () => {
+    setGameState(prev => ({
+      ...prev,
+      hints: { ...prev.hints, lengthRevealed: true }
+    }))
+  }
+
+  const revealLetters = () => {
+    setGameState(prev => ({
+      ...prev,
+      hints: { ...prev.hints, lettersRevealed: true }
+    }))
+  }
+
+  // Get current target move for hints
+  const currentTargetMove = gameState.puzzle?.topMoves.find((move, index) => 
+    index === gameState.hints.currentMoveIndex && !gameState.foundMoves.has(getMoveKey(move))
+  )
+
+  // Generate highlight squares for hints
+  const highlightSquares = []
+  if (currentTargetMove && gameState.hints.anchorRevealed && currentTargetMove.anchorCell) {
+    highlightSquares.push({
+      row: currentTargetMove.anchorCell.row,
+      col: currentTargetMove.anchorCell.col,
+      type: 'anchor' as const
+    })
   }
 
   if (isLoading) {
@@ -394,6 +456,7 @@ const RushGame = () => {
               pendingTiles={gameState.pendingTiles}
               onPlaceTile={handlePlaceTile}
               onPickupTile={handlePickupTile}
+              highlightSquares={highlightSquares}
             />
           </div>
 
@@ -451,6 +514,74 @@ const RushGame = () => {
             topMoves={gameState.puzzle.topMoves}
             foundMoves={gameState.foundMoves}
           />
+          
+          {/* Hints Panel */}
+          {currentTargetMove && !gameState.isGameOver && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Suggerimenti</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Suggerimenti per la mossa #{gameState.hints.currentMoveIndex + 1}
+                </div>
+                
+                {/* Hint 1: Anchor Cell */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={revealAnchor}
+                    disabled={gameState.hints.anchorRevealed}
+                    className="w-full justify-start"
+                  >
+                    {gameState.hints.anchorRevealed ? '✓' : '1.'} Evidenzia casella di partenza
+                  </Button>
+                  {gameState.hints.anchorRevealed && (
+                    <p className="text-sm text-muted-foreground ml-4">
+                      Guarda la casella evidenziata in giallo sul tabellone
+                    </p>
+                  )}
+                </div>
+                
+                {/* Hint 2: Word Length */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={revealLength}
+                    disabled={gameState.hints.lengthRevealed}
+                    className="w-full justify-start"
+                  >
+                    {gameState.hints.lengthRevealed ? '✓' : '2.'} Mostra numero di lettere
+                  </Button>
+                  {gameState.hints.lengthRevealed && (
+                    <p className="text-sm text-muted-foreground ml-4">
+                      La parola principale ha {currentTargetMove.mainWordLength} lettere
+                    </p>
+                  )}
+                </div>
+                
+                {/* Hint 3: Letters Used */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={revealLetters}
+                    disabled={gameState.hints.lettersRevealed}
+                    className="w-full justify-start"
+                  >
+                    {gameState.hints.lettersRevealed ? '✓' : '3.'} Mostra lettere da usare
+                  </Button>
+                  {gameState.hints.lettersRevealed && (
+                    <p className="text-sm text-muted-foreground ml-4">
+                      Usa queste lettere: {currentTargetMove.lettersUsed?.join(', ')}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
