@@ -365,9 +365,9 @@ const RushGame = () => {
     }))
   }
 
-  // Get current target move for hints
+  // Get current target move for hints - find the first unfound move
   const currentTargetMove = gameState.puzzle?.topMoves.find((move, index) => 
-    index === gameState.hints.currentMoveIndex && !gameState.foundMoves.has(getMoveKey(move))
+    !gameState.foundMoves.has(getMoveKey(move))
   )
 
   // Generate highlight squares for hints

@@ -154,11 +154,17 @@ function generateTopMovesWithBot(
   const bot = new ScrabbleBot(isValidWord, isDictionaryLoaded)
   
   if (!isDictionaryLoaded) {
-    // Fallback moves if dictionary not loaded
+    // Fallback moves if dictionary not loaded with proper hint data
+    const fallbackTiles = Array.from(board.values()).slice(0, 2)
     return [{
-      tiles: Array.from(board.values()).slice(0, 2),
+      tiles: fallbackTiles,
       words: ['WORD'],
-      score: 50
+      score: 50,
+      anchorCell: fallbackTiles.length > 0 ? 
+        { row: fallbackTiles[0].row, col: fallbackTiles[0].col } : 
+        { row: 7, col: 7 },
+      mainWordLength: 4,
+      lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
     }]
   }
   
@@ -225,14 +231,22 @@ export function generateLocal15x15RushPuzzle(
   const board = generateConnectedBoard(tileBag)
   const rack = tileBag.splice(0, 7)
   
+  // Generate fallback moves with proper hint data
+  const fallbackMoves = [{
+    tiles: Array.from(board.values()).slice(0, 2),
+    words: ['WORD'],
+    score: 50,
+    anchorCell: Array.from(board.values()).length > 0 ? 
+      { row: Array.from(board.values())[0].row, col: Array.from(board.values())[0].col } : 
+      { row: 7, col: 7 },
+    mainWordLength: 4,
+    lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
+  }]
+  
   return {
     id: `local-fallback-${Date.now()}`,
     board: Array.from(board.values()),
     rack: shuffleArray(rack),
-    topMoves: [{
-      tiles: Array.from(board.values()).slice(0, 2),
-      words: ['WORD'],
-      score: 50
-    }]
+    topMoves: fallbackMoves
   }
 }

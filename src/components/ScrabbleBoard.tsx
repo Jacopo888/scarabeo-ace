@@ -128,7 +128,7 @@ export const ScrabbleBoard = ({
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"))
       if (data.source === "rack") {
-        placeTileHandler(row, col, data.tile as StoreTile | GameTile)
+        placeTileHandler(row, col, data.tile as any)
       }
     } catch (error) {
       console.error("Failed to parse drop data:", error)
