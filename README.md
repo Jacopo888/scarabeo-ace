@@ -119,3 +119,15 @@ docker-compose up --build
 ```
 
 The API will be accessible at `http://localhost:3000/ping`.
+
+### Database migrations
+
+Drizzle is used for database migrations. From within the `rating-api` directory:
+
+```sh
+# generate a new migration after editing src/schema.ts
+npm run db:generate
+
+# apply all pending migrations
+npm run db:migrate
+```
