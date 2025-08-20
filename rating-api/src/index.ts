@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { db } from './db';
-import { players, games } from './schema';
+import { players, games, rushPuzzles } from './schema';
 import { eq, desc } from 'drizzle-orm';
 import { createClient } from 'redis';
 import { calculateElo, Mode } from './elo';
@@ -16,10 +16,22 @@ const redis = createClient({ url: process.env.REDIS_URL || 'redis://localhost:63
 redis.connect().catch((err) => console.error('Redis connect error', err));
 
 // Rush game endpoints
-app.get('/api/rush/new', (req, res) => {
+app.get('/rush/new', async (_req, res) => {
   try {
     const puzzle = generateRushPuzzle();
-    res.json(puzzle);
+    const bestScore = Math.max(...puzzle.topMoves.map(m => m.score));
+
+    await db
+      .insert(rushPuzzles)
+      .values({
+        id: puzzle.id,
+        board: puzzle.board,
+        rack: puzzle.rack,
+        bestScore,
+      })
+      .onConflictDoNothing();
+
+    res.json({ puzzleId: puzzle.id, board: puzzle.board, rack: puzzle.rack, bestScore });
   } catch (error) {
     console.error('Error generating puzzle:', error);
     res.status(500).json({ error: 'Failed to generate puzzle' });
