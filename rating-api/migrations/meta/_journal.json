@@ -8,6 +8,20 @@
       "when": 1753891552630,
       "tag": "0000_dear_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755691318569,
+      "tag": "0001_add_rating",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755691318570,
+      "tag": "0002_rush",
+      "breakpoints": true
     }
   ]
 }
