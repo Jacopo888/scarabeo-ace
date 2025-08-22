@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { ArrowLeft, Timer, Trophy, Zap, Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useDictionary } from '@/contexts/DictionaryContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
 import { RushTopMoves } from '@/components/RushTopMoves'
+import { RushLeaderboard } from '@/components/RushLeaderboard'
+import { useRushPuzzle } from '@/hooks/useRush'
+import { submitRushScore } from '@/api/rush'
 import { generateLocal15x15RushPuzzle } from '@/utils/rushPuzzleGenerator15x15'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
@@ -54,21 +59,42 @@ const RushGame = () => {
       lettersRevealed: false
     }
   })
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLocalGame, setIsLocalGame] = useState(false)
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [initialBoard, setInitialBoard] = useState<Map<string, PlacedTile>>(new Map())
+  const [currentPuzzleId, setCurrentPuzzleId] = useState<string | null>(null)
+  const [showSubmissionError, setShowSubmissionError] = useState(false)
+  const [submissionError, setSubmissionError] = useState<string>('')
   
   const { timeLeft, isRunning, start, formatTime } = useCountdown()
   const { isValidWord, isLoaded: isDictionaryLoaded } = useDictionary()
+  const { user } = useAuth()
   const { toast } = useToast()
   const isMobile = useIsMobile()
-  
-  const API_BASE = import.meta.env.VITE_RATING_API_URL || ''
+  const { data: apiPuzzle, error: puzzleError, mutate: refetchPuzzle } = useRushPuzzle()
 
   useEffect(() => {
-    fetchNewPuzzle()
-  }, [])
+    if (apiPuzzle) {
+      const puzzle: RushPuzzle = {
+        id: apiPuzzle.puzzleId,
+        board: apiPuzzle.board,
+        rack: apiPuzzle.rack,
+        topMoves: [] // Will be handled by local generation for now
+      }
+      initializePuzzle(puzzle)
+      setCurrentPuzzleId(apiPuzzle.puzzleId)
+    } else if (puzzleError && isDictionaryLoaded) {
+      // Fallback to local puzzle
+      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
+      initializePuzzle(localPuzzle)
+      setCurrentPuzzleId(null)
+      
+      toast({
+        title: "Playing Offline",
+        description: "Using local puzzle generation. Scores won't be saved.",
+        variant: "default"
+      })
+    }
+  }, [apiPuzzle, puzzleError, isDictionaryLoaded])
 
   useEffect(() => {
     if (timeLeft === 0 && isRunning) {
@@ -76,54 +102,8 @@ const RushGame = () => {
     }
   }, [timeLeft, isRunning])
 
-  const fetchNewPuzzle = async () => {
-    try {
-      setIsLoading(true)
-      setIsLocalGame(false)
-      
-      if (API_BASE) {
-        try {
-          const response = await fetch(`${API_BASE}/api/rush/new`)
-          if (!response.ok) throw new Error('Failed to fetch puzzle')
-          
-          const puzzle: RushPuzzle = await response.json()
-          initializePuzzle(puzzle)
-          return
-        } catch (apiError) {
-          console.warn('API not available, falling back to local puzzle:', apiError)
-        }
-      }
-      
-      // Fallback to local puzzle generation
-      if (!isDictionaryLoaded) {
-        toast({
-          title: "Loading Dictionary",
-          description: "Please wait for the dictionary to load...",
-          variant: "default"
-        })
-        return
-      }
-      
-      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
-      initializePuzzle(localPuzzle)
-      setIsLocalGame(true)
-      
-      toast({
-        title: "Playing Offline",
-        description: "Using local puzzle generation. Scores won't be saved.",
-        variant: "default"
-      })
-      
-    } catch (error) {
-      console.error('Error generating puzzle:', error)
-      toast({
-        title: "Error",
-        description: "Failed to generate puzzle. Please try again.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const fetchNewPuzzle = () => {
+    refetchPuzzle()
   }
 
   const initializePuzzle = (puzzle: RushPuzzle) => {
@@ -325,21 +305,53 @@ const RushGame = () => {
     
     setGameState(prev => ({ ...prev, isGameOver: true }))
     
-    if (API_BASE && !isLocalGame) {
+    // Submit score if user is authenticated and we have a puzzle ID
+    if (user && currentPuzzleId) {
       try {
-        await fetch(`${API_BASE}/rush/score`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            puzzleId: gameState.puzzle.id, 
-            totalScore: gameState.totalScore 
-          })
+        await submitRushScore({
+          puzzleId: currentPuzzleId,
+          userId: user.id,
+          score: gameState.totalScore
+        })
+        
+        toast({
+          title: "Score Submitted!",
+          description: `Your score of ${gameState.totalScore} points has been recorded.`,
+          variant: "default"
         })
       } catch (error) {
         console.error('Error submitting score:', error)
+        setSubmissionError(error instanceof Error ? error.message : 'Failed to submit score')
+        setShowSubmissionError(true)
       }
-    } else {
-      console.log('Local game - score not submitted:', gameState.totalScore)
+    } else if (!user) {
+      toast({
+        title: "Score Not Saved",
+        description: "Sign in to save your scores to the leaderboard.",
+        variant: "default"
+      })
+    }
+  }
+
+  const retrySubmission = async () => {
+    if (!user || !currentPuzzleId) return
+    
+    try {
+      await submitRushScore({
+        puzzleId: currentPuzzleId,
+        userId: user.id,
+        score: gameState.totalScore
+      })
+      
+      toast({
+        title: "Score Submitted!",
+        description: `Your score of ${gameState.totalScore} points has been recorded.`,
+        variant: "default"
+      })
+      setShowSubmissionError(false)
+    } catch (error) {
+      console.error('Error retrying submission:', error)
+      setSubmissionError(error instanceof Error ? error.message : 'Failed to submit score')
     }
   }
 
@@ -380,7 +392,7 @@ const RushGame = () => {
     })
   }
 
-  if (isLoading) {
+  if (!apiPuzzle && !puzzleError && !gameState.puzzle) {
     return (
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -417,7 +429,7 @@ const RushGame = () => {
         </Link>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Zap className="h-8 w-8 text-primary" />
-          Rush Mode
+          Rush 90s
         </h1>
       </div>
 
@@ -510,14 +522,21 @@ const RushGame = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <RushTopMoves 
-            topMoves={gameState.puzzle.topMoves}
-            foundMoves={gameState.foundMoves}
-          />
+          {/* Leaderboard - Mobile: show above top moves */}
+          <div className="lg:order-2">
+            <RushLeaderboard />
+          </div>
+          
+          <div className="lg:order-1">
+            <RushTopMoves 
+              topMoves={gameState.puzzle.topMoves}
+              foundMoves={gameState.foundMoves}
+            />
+          </div>
           
           {/* Hints Panel */}
           {currentTargetMove && !gameState.isGameOver && (
-            <Card>
+            <Card className="lg:order-3">
               <CardHeader>
                 <CardTitle className="text-lg">Suggerimenti</CardTitle>
               </CardHeader>
@@ -584,6 +603,24 @@ const RushGame = () => {
           )}
         </div>
       </div>
+
+      {/* Error Dialog */}
+      <AlertDialog open={showSubmissionError} onOpenChange={setShowSubmissionError}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Score Submission Failed</AlertDialogTitle>
+            <AlertDialogDescription>
+              {submissionError}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={retrySubmission}>
+              Retry
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
