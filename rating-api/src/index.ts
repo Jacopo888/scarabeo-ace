@@ -1,42 +1,94 @@
 import express from 'express';
 import cors from 'cors';
-import { db } from './db';
-import { players, games } from './schema';
-import { eq, desc } from 'drizzle-orm';
-import { createClient } from 'redis';
+import { db, redis } from './db';
+import { players, games, rushPuzzles, rushScores } from './schema';
+import { eq, desc, and } from 'drizzle-orm';
 import { calculateElo, Mode } from './elo';
 import { generateRushPuzzle } from './rush/puzzle';
+import { z } from 'zod';
 
-const app = express();
-const port = process.env.PORT || 3000;
+export const app = express();
+const port = Number(process.env.PORT) || 4000;
 app.use(cors());
 app.use(express.json());
 
-const redis = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
-redis.connect().catch((err) => console.error('Redis connect error', err));
-
 // Rush game endpoints
-app.get('/api/rush/new', (req, res) => {
+app.get('/rush/new', async (_req, res) => {
   try {
     const puzzle = generateRushPuzzle();
-    res.json(puzzle);
+    const bestScore = puzzle.topMoves[0]?.score ?? 0;
+    await db
+      .insert(rushPuzzles)
+      .values({
+        id: puzzle.id,
+        board: puzzle.board,
+        rack: puzzle.rack,
+        bestScore,
+      })
+      .onConflictDoNothing();
+    res.json({ puzzleId: puzzle.id, board: puzzle.board, rack: puzzle.rack, bestScore });
   } catch (error) {
     console.error('Error generating puzzle:', error);
     res.status(500).json({ error: 'Failed to generate puzzle' });
   }
 });
 
-app.post('/rush/score', (req, res) => {
+const scoreSchema = z.object({
+  userId: z.string(),
+  puzzleId: z.string().uuid(),
+  score: z.number().int().min(0),
+});
+
+app.post('/rush/score', async (req, res) => {
   try {
-    const { puzzleId, totalScore } = req.body;
-    if (!puzzleId || typeof totalScore !== 'number') {
+    const parsed = scoreSchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({ error: 'Invalid request body' });
     }
-    console.log(`Rush game completed - Puzzle: ${puzzleId}, Score: ${totalScore}`);
-    res.json({ success: true, message: 'Score recorded successfully', puzzleId, totalScore });
+    const { userId, puzzleId, score } = parsed.data;
+    const existing = await db
+      .select()
+      .from(rushScores)
+      .where(and(eq(rushScores.userId, userId), eq(rushScores.puzzleId, puzzleId)));
+    if (existing[0]) {
+      if (score > existing[0].score) {
+        await db.update(rushScores).set({ score }).where(eq(rushScores.id, existing[0].id));
+      }
+    } else {
+      await db.insert(rushScores).values({ userId, puzzleId, score });
+    }
+    await redis.del('rush:leaderboard');
+    res.json({ success: true });
   } catch (error) {
     console.error('Error recording score:', error);
     res.status(500).json({ error: 'Failed to record score' });
+  }
+});
+
+app.get('/rush/leaderboard', async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 50;
+    const cacheKey = 'rush:leaderboard';
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
+    const board = await db
+      .select({
+        userId: rushScores.userId,
+        score: rushScores.score,
+        puzzleId: rushScores.puzzleId,
+        createdAt: rushPuzzles.createdAt,
+      })
+      .from(rushScores)
+      .leftJoin(rushPuzzles, eq(rushScores.puzzleId, rushPuzzles.id))
+      .orderBy(desc(rushScores.score))
+      .limit(limit);
+    await redis.set(cacheKey, JSON.stringify(board), { EX: 60 });
+    res.json(board);
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
 
@@ -97,8 +149,10 @@ app.get('/players', async (_req, res) => {
   res.json(allPlayers);
 });
 
-app.listen(port, () => {
-  console.log(`rating-api listening on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`rating-api listening on port ${port}`);
+  });
+}
 
-export default app
+export default app;

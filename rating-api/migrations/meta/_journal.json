@@ -22,6 +22,13 @@
       "when": 1755691318570,
       "tag": "0002_rush",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755948238558,
+      "tag": "0003_absurd_doctor_doom",
+      "breakpoints": true
     }
   ]
 }

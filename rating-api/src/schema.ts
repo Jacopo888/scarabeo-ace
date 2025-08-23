@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp, jsonb, index, uuid } from 'drizzle-orm/pg-core';
 import { desc } from 'drizzle-orm';
 
 export const players = pgTable('players', {
@@ -18,7 +18,7 @@ export const games = pgTable('games', {
 });
 
 export const rushPuzzles = pgTable('rush_puzzles', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   board: jsonb('board').notNull(),
   rack: jsonb('rack').notNull(),
   bestScore: integer('best_score').notNull(),
@@ -28,9 +28,9 @@ export const rushPuzzles = pgTable('rush_puzzles', {
 export const rushScores = pgTable(
   'rush_scores',
   {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => players.id).notNull(),
-    puzzleId: integer('puzzle_id')
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id').notNull(),
+    puzzleId: uuid('puzzle_id')
       .references(() => rushPuzzles.id, { onDelete: 'cascade' })
       .notNull(),
     score: integer('score').notNull(),
