@@ -118,16 +118,24 @@ A `docker-compose.yml` is available to start the API together with Postgres and 
 docker-compose up --build
 ```
 
-The API will be accessible at `http://localhost:3000/ping`.
+The API will be accessible at `http://localhost:4000/ping` and proxied via `/api` from the frontend.
 
-### Database migrations
+### Environment and migrations
 
-Drizzle is used for database migrations. From within the `rating-api` directory:
+`rating-api` requires the following environment variables:
+
+```
+DATABASE_URL=postgres://rating:example@localhost:5432/rating
+REDIS_URL=redis://localhost:6379
+PORT=4000
+```
+
+Drizzle is used for database migrations:
 
 ```sh
 # generate a new migration after editing src/schema.ts
-npm run db:generate
+npm --prefix rating-api run db:generate
 
 # apply all pending migrations
-npm run db:migrate
+npm --prefix rating-api run db:migrate
 ```
