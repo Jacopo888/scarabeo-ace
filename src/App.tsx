@@ -15,6 +15,7 @@ import Dictionary from "./pages/Dictionary";
 import Lobby from "./pages/Lobby";
 import RushGame from "./pages/RushGame";
 import NotFound from "./pages/NotFound";
+import Daily from "./pages/Daily";
 import { BotProvider } from "./contexts/BotContext";
 import { DictionaryProvider } from "./contexts/DictionaryContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -43,6 +44,7 @@ const AppRoutes = () => {
           <Route path="/dictionary" element={<Dictionary />} />
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/rush" element={<RushGame />} />
+          <Route path="/daily" element={<Daily />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

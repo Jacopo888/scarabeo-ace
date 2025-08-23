@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, jsonb, index, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp, jsonb, index, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
 import { desc } from 'drizzle-orm';
 
 export const players = pgTable('players', {
@@ -40,5 +40,30 @@ export const rushScores = pgTable(
     puzzleIdx: index('rush_scores_puzzle_id_idx').on(table.puzzleId),
     userIdx: index('rush_scores_user_id_idx').on(table.userId),
     scoreIdx: index('rush_scores_score_idx').on(desc(table.score)),
+  }),
+);
+
+export const dailyPuzzles = pgTable('daily_puzzles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  yyyymmdd: integer('yyyymmdd').notNull().unique(),
+  board: jsonb('board').notNull(),
+  rack: jsonb('rack').notNull(),
+  bestScore: integer('best_score').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const dailyScores = pgTable(
+  'daily_scores',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id').notNull(),
+    yyyymmdd: integer('yyyymmdd').notNull(),
+    score: integer('score').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    userDayUnique: uniqueIndex('daily_scores_user_day_idx').on(table.userId, table.yyyymmdd),
+    dayIdx: index('daily_scores_day_idx').on(table.yyyymmdd),
+    scoreIdx: index('daily_scores_score_idx').on(desc(table.score)),
   }),
 );

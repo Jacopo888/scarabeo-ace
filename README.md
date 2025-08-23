@@ -139,3 +139,13 @@ npm --prefix rating-api run db:generate
 # apply all pending migrations
 npm --prefix rating-api run db:migrate
 ```
+
+### Cron
+
+Generate tomorrow's daily puzzle:
+
+```sh
+npm --prefix rating-api run makeDaily
+```
+
+Schedule this with cron or GitHub Actions to run every day.
