@@ -17,7 +17,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-function generateConnectedBoard(tileBag: Tile[], useLight = false): Map<string, PlacedTile> {
+function generateConnectedBoard(tileBag: Tile[], useLight = false, simulationTurns = 2): Map<string, PlacedTile> {
   const board = new Map<string, PlacedTile>()
 
   // Start with a word at center (horizontally)
@@ -100,10 +100,10 @@ function generateConnectedBoard(tileBag: Tile[], useLight = false): Map<string, 
   }
 
   // Simulate additional moves to make it look mid-game
-  return simulateAdditionalMoves(board, tileBag, useLight)
+  return simulateAdditionalMoves(board, tileBag, useLight, simulationTurns)
 }
 
-function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[], useLight = false): Map<string, PlacedTile> {
+function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[], useLight = false, simulationTurns = 2): Map<string, PlacedTile> {
   // Skip heavy simulation in light mode
   if (useLight) {
     return board
@@ -111,7 +111,7 @@ function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[]
   
   const bot = new ScrabbleBot((word) => true, true) // Accept all words for simulation
   
-  for (let moveCount = 0; moveCount < 2; moveCount++) {
+  for (let moveCount = 0; moveCount < simulationTurns; moveCount++) {
     const currentRack = tileBag.splice(0, 7)
     if (currentRack.length < 3) break
     
@@ -265,14 +265,15 @@ function generateTopMovesWithBot(
 export function generateLocal15x15RushPuzzle(
   isValidWord: (word: string) => boolean,
   isDictionaryLoaded: boolean,
-  useLight = false
+  useLight = false,
+  simulationTurns = 2
 ): RushPuzzle {
   let attempts = 0
   const maxAttempts = useLight ? 1 : 5
   
   while (attempts < maxAttempts) {
     const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-    const board = generateConnectedBoard(tileBag, useLight)
+    const board = generateConnectedBoard(tileBag, useLight, simulationTurns)
     const rack = tileBag.splice(0, 7)
     
     const topMoves = generateTopMovesWithBot(board, rack, isValidWord, isDictionaryLoaded)
@@ -291,7 +292,7 @@ export function generateLocal15x15RushPuzzle(
   
   // Fallback - always succeeds
   const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-  const board = generateConnectedBoard(tileBag, true) // Force light mode for fallback
+  const board = generateConnectedBoard(tileBag, true, 1) // Force light mode for fallback with minimal turns
   const rack = tileBag.splice(0, 7)
   
   // Generate fallback moves using only rack tiles

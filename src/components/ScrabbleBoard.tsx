@@ -163,7 +163,16 @@ export const ScrabbleBoard = ({
       return
     }
 
-    placeTileHandler(row, col, selectedTile!)
+    // Convert GameTile to StoreTile format if needed
+    const tileToPlace = 'id' in selectedTile 
+      ? selectedTile 
+      : {
+          id: `${selectedTile.letter}-${Date.now()}-${Math.random()}`,
+          letter: selectedTile.letter,
+          value: (selectedTile as any).points || (selectedTile as any).value || 1
+        }
+
+    placeTileHandler(row, col, tileToPlace)
     onUseSelectedTile?.()
   }
 

@@ -73,8 +73,8 @@ const Daily = () => {
 
   const createTodaysPuzzle = async () => {
     try {
-      // Generate a complex puzzle with enhanced simulation
-      const puzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false);
+      // Generate a complex puzzle with 8 simulation turns for more challenging gameplay
+      const puzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 8);
       const bestScore = puzzle.topMoves[0]?.score || 50;
 
       const newPuzzle = {
