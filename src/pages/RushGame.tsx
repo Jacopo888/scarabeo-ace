@@ -112,7 +112,7 @@ const RushGame = () => {
       setCurrentPuzzleId(apiPuzzle.puzzleId)
       setIsRefetching(false)
     } else if (puzzleError && isDictionaryLoaded) {
-      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
+      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 6)
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
       setIsRefetching(false)
@@ -167,7 +167,7 @@ const RushGame = () => {
     } catch (error) {
       // If refetch fails, generate local puzzle immediately
       if (isDictionaryLoaded) {
-        const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
+        const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 6)
         initializePuzzle(localPuzzle)
         setCurrentPuzzleId(null)
         setIsRefetching(false)

@@ -86,6 +86,15 @@ export class ScrabbleBot {
     for (const candidate of candidates) {
       const words = findNewWordsFormed(new Map(), candidate.tiles)
       if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
+        // Ensure the main word equals the placed contiguous letters
+        const isHorizontal = candidate.tiles.every(t => t.row === candidate.tiles[0].row)
+        const ordered = [...candidate.tiles].sort((a, b) =>
+          isHorizontal ? a.col - b.col : a.row - b.row
+        )
+        const placedString = ordered.map(t => t.letter).join('')
+        const containsMain = words.some(w => w.word === placedString)
+        if (!containsMain) continue
+
         const score = calculateNewMoveScore(words, candidate.tiles)
         moves.push({
           tiles: candidate.tiles,
@@ -118,6 +127,15 @@ export class ScrabbleBot {
         if (!hasOverlap) {
           const words = findNewWordsFormed(board, candidate.tiles)
           if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
+            // Ensure the main word equals the placed contiguous letters
+            const isHorizontal = candidate.tiles.every(t => t.row === candidate.tiles[0].row)
+            const ordered = [...candidate.tiles].sort((a, b) =>
+              isHorizontal ? a.col - b.col : a.row - b.row
+            )
+            const placedString = ordered.map(t => t.letter).join('')
+            const containsMain = words.some(w => w.word === placedString)
+            if (!containsMain) continue
+
             const score = calculateNewMoveScore(words, candidate.tiles)
             moves.push({
               tiles: candidate.tiles,

@@ -17,7 +17,13 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-function generateConnectedBoard(tileBag: Tile[], useLight = false, simulationTurns = 2): Map<string, PlacedTile> {
+function generateConnectedBoard(
+  tileBag: Tile[], 
+  useLight = false, 
+  simulationTurns = 2,
+  isValidWord: (word: string) => boolean = () => true,
+  isDictionaryLoaded: boolean = false
+): Map<string, PlacedTile> {
   const board = new Map<string, PlacedTile>()
 
   // Start with a word at center (horizontally)
@@ -100,16 +106,23 @@ function generateConnectedBoard(tileBag: Tile[], useLight = false, simulationTur
   }
 
   // Simulate additional moves to make it look mid-game
-  return simulateAdditionalMoves(board, tileBag, useLight, simulationTurns)
+  return simulateAdditionalMoves(board, tileBag, useLight, simulationTurns, isValidWord, isDictionaryLoaded)
 }
 
-function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[], useLight = false, simulationTurns = 2): Map<string, PlacedTile> {
-  // Skip heavy simulation in light mode
-  if (useLight) {
+function simulateAdditionalMoves(
+  board: Map<string, PlacedTile>, 
+  tileBag: Tile[], 
+  useLight = false, 
+  simulationTurns = 2,
+  isValidWord: (word: string) => boolean = () => true,
+  isDictionaryLoaded: boolean = false
+): Map<string, PlacedTile> {
+  // Skip heavy simulation in light mode or without dictionary
+  if (useLight || !isDictionaryLoaded) {
     return board
   }
   
-  const bot = new ScrabbleBot((word) => true, true) // Accept all words for simulation
+  const bot = new ScrabbleBot(isValidWord, isDictionaryLoaded)
   
   for (let moveCount = 0; moveCount < simulationTurns; moveCount++) {
     const currentRack = tileBag.splice(0, 7)
@@ -236,30 +249,76 @@ function generateTopMovesWithBot(
   
   const allMoves = bot.generateAllPossibleMoves(gameState, rack)
   
-  // Filter for high-scoring moves and take top 5
-  return allMoves
+  // Filter for high-scoring moves, then select a mixed set (directions/anchors)
+  const filtered = allMoves
     .filter(move => move.score >= 30)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(move => {
-      // Calculate hints for this move
-      const isHorizontal = move.tiles.every(t => t.row === move.tiles[0].row)
-      const startTile = isHorizontal
-        ? move.tiles.reduce((min, t) => (t.col < min.col ? t : min), move.tiles[0])
-        : move.tiles.reduce((min, t) => (t.row < min.row ? t : min), move.tiles[0])
-      const startCell = { row: startTile.row, col: startTile.col }
-      const mainWordLength = move.words.length > 0 ? Math.max(...move.words.map(w => w.length)) : undefined
-      const lettersUsed = move.tiles.map(tile => tile.letter).sort()
 
-      return {
-        tiles: move.tiles,
-        words: move.words,
-        score: move.score,
-        startCell,
-        mainWordLength,
-        lettersUsed
+  const picked: typeof allMoves = []
+  const seenAnchors = new Set<string>()
+
+  const getOrientation = (mv: typeof allMoves[number]) => mv.tiles.every(t => t.row === mv.tiles[0].row) ? 'H' : 'V'
+  const getStartTile = (mv: typeof allMoves[number]) => {
+    const isH = getOrientation(mv) === 'H'
+    return isH
+      ? mv.tiles.reduce((min, t) => (t.col < min.col ? t : min), mv.tiles[0])
+      : mv.tiles.reduce((min, t) => (t.row < min.row ? t : min), mv.tiles[0])
+  }
+  
+  // Prefer alternating orientations and different anchor rows/cols
+  let lastOrientation: 'H' | 'V' | null = null
+  for (const mv of filtered) {
+    if (picked.length >= 5) break
+    const ori = getOrientation(mv)
+    const start = getStartTile(mv)
+    const anchorKey = ori === 'H' ? `r${start.row}` : `c${start.col}`
+
+    const orientationOk = lastOrientation === null || ori !== lastOrientation || picked.length >= 3
+    const anchorOk = !seenAnchors.has(anchorKey)
+
+    if (orientationOk && anchorOk) {
+      picked.push(mv)
+      seenAnchors.add(anchorKey)
+      lastOrientation = ori
+    }
+  }
+
+  // Fill remaining slots if needed
+  if (picked.length < 5) {
+    for (const mv of filtered) {
+      if (picked.length >= 5) break
+      const start = getStartTile(mv)
+      const anchorKey = getOrientation(mv) === 'H' ? `r${start.row}` : `c${start.col}`
+      if (!picked.includes(mv)) {
+        // try to avoid duplicate anchors if possible
+        if (!seenAnchors.has(anchorKey) || picked.length <= 2) {
+          picked.push(mv)
+          seenAnchors.add(anchorKey)
+        }
       }
-    })
+    }
+  }
+
+  const finalMoves = picked.slice(0, 5).map(move => {
+    const isHorizontal = move.tiles.every(t => t.row === move.tiles[0].row)
+    const startTile = isHorizontal
+      ? move.tiles.reduce((min, t) => (t.col < min.col ? t : min), move.tiles[0])
+      : move.tiles.reduce((min, t) => (t.row < min.row ? t : min), move.tiles[0])
+    const startCell = { row: startTile.row, col: startTile.col }
+    const mainWordLength = move.words.length > 0 ? Math.max(...move.words.map(w => w.length)) : undefined
+    const lettersUsed = move.tiles.map(tile => tile.letter).sort()
+
+    return {
+      tiles: move.tiles,
+      words: move.words,
+      score: move.score,
+      startCell,
+      mainWordLength,
+      lettersUsed
+    }
+  })
+
+  return finalMoves
 }
 
 export function generateLocal15x15RushPuzzle(
@@ -273,7 +332,7 @@ export function generateLocal15x15RushPuzzle(
   
   while (attempts < maxAttempts) {
     const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-    const board = generateConnectedBoard(tileBag, useLight, simulationTurns)
+    const board = generateConnectedBoard(tileBag, useLight, simulationTurns, isValidWord, isDictionaryLoaded)
     const rack = tileBag.splice(0, 7)
     
     const topMoves = generateTopMovesWithBot(board, rack, isValidWord, isDictionaryLoaded)
@@ -292,7 +351,7 @@ export function generateLocal15x15RushPuzzle(
   
   // Fallback - always succeeds
   const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-  const board = generateConnectedBoard(tileBag, true, 1) // Force light mode for fallback with minimal turns
+  const board = generateConnectedBoard(tileBag, true, 1, isValidWord, isDictionaryLoaded) // Force light mode for fallback with minimal turns
   const rack = tileBag.splice(0, 7)
   
   // Generate fallback moves using only rack tiles
