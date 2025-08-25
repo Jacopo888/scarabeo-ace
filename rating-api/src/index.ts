@@ -78,13 +78,13 @@ app.get('/rush/leaderboard', async (req, res) => {
     }
     const board = await db
       .select({
-        userId: rushScores.userId,
+        id: rushScores.id,
+        user_id: rushScores.userId,
+        puzzle_id: rushScores.puzzleId,
         score: rushScores.score,
-        puzzleId: rushScores.puzzleId,
-        createdAt: rushPuzzles.createdAt,
+        created_at: rushScores.createdAt,
       })
       .from(rushScores)
-      .leftJoin(rushPuzzles, eq(rushScores.puzzleId, rushPuzzles.id))
       .orderBy(desc(rushScores.score))
       .limit(limit);
     await redis.set(cacheKey, JSON.stringify(board), { EX: 60 });

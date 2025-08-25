@@ -2,6 +2,7 @@ import { TILE_DISTRIBUTION } from '../../../src/types/game'
 import { validateMoveLogic } from '../../../src/utils/moveValidation'
 import { findNewWordsFormed } from '../../../src/utils/newWordFinder'
 import { calculateNewMoveScore } from '../../../src/utils/newScoring'
+import { randomUUID } from 'crypto'
 
 interface Tile {
   letter: string
@@ -263,7 +264,7 @@ function generatePermutations(rack: Tile[], length: number): Array<{ tiles: Tile
 }
 
 export function generateRushPuzzle(): RushPuzzle {
-  const id = `puzzle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const id = randomUUID()
   let attempts = 0
   const maxAttempts = 10
   
@@ -300,7 +301,7 @@ export function generateRushPuzzle(): RushPuzzle {
   const fallbackTiles = Array.from(board.values()).slice(0, 2)
   const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
   return {
-    id: `fallback_${Date.now()}`,
+    id: randomUUID(),
     board: Array.from(board.values()),
     rack: shuffleArray(rack),
     topMoves: [{
