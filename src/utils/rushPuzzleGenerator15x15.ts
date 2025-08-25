@@ -150,6 +150,69 @@ function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[]
   return board
 }
 
+// Helper to create plausible moves using only rack tiles
+function createPlaceableFallbackMove(boardMap: Map<string, PlacedTile>, rack: Tile[]): RushMove {
+  // Find free cells adjacent to existing tiles
+  const adjacentCells: Array<{row: number, col: number}> = []
+  
+  for (const [key, tile] of boardMap.entries()) {
+    const { row, col } = tile
+    
+    // Check all 4 directions
+    const neighbors = [
+      { row: row - 1, col },
+      { row: row + 1, col },
+      { row, col: col - 1 },
+      { row, col: col + 1 }
+    ]
+    
+    for (const neighbor of neighbors) {
+      if (neighbor.row >= 0 && neighbor.row < 15 && neighbor.col >= 0 && neighbor.col < 15) {
+        const neighborKey = `${neighbor.row},${neighbor.col}`
+        if (!boardMap.has(neighborKey) && !adjacentCells.some(c => c.row === neighbor.row && c.col === neighbor.col)) {
+          adjacentCells.push(neighbor)
+        }
+      }
+    }
+  }
+  
+  if (adjacentCells.length === 0 || rack.length === 0) {
+    // Ultimate fallback: place at center
+    return {
+      tiles: [{
+        ...rack[0] || { letter: 'A', points: 1, isBlank: false },
+        row: 7,
+        col: 7
+      }],
+      words: ['A'],
+      score: 10,
+      startCell: { row: 7, col: 7 },
+      mainWordLength: 1,
+      lettersUsed: rack.length > 0 ? [rack[0].letter] : ['A']
+    }
+  }
+  
+  // Use 1-2 tiles from rack on adjacent free cells
+  const numTiles = Math.min(2, rack.length, adjacentCells.length)
+  const selectedCells = adjacentCells.slice(0, numTiles)
+  const selectedRackTiles = rack.slice(0, numTiles)
+  
+  const tiles: PlacedTile[] = selectedCells.map((cell, i) => ({
+    ...selectedRackTiles[i],
+    row: cell.row,
+    col: cell.col
+  }))
+  
+  return {
+    tiles,
+    words: [tiles.map(t => t.letter).join('')], // Simple word from placed tiles
+    score: tiles.reduce((sum, t) => sum + t.points, 0) + 15, // Base points + bonus
+    startCell: { row: tiles[0].row, col: tiles[0].col },
+    mainWordLength: tiles.length,
+    lettersUsed: tiles.map(t => t.letter).sort()
+  }
+}
+
 function generateTopMovesWithBot(
   board: Map<string, PlacedTile>, 
   rack: Tile[], 
@@ -159,17 +222,8 @@ function generateTopMovesWithBot(
   const bot = new ScrabbleBot(isValidWord, isDictionaryLoaded)
   
   if (!isDictionaryLoaded) {
-    // Fallback moves if dictionary not loaded with proper hint data
-    const fallbackTiles = Array.from(board.values()).slice(0, 2)
-    const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
-    return [{
-      tiles: fallbackTiles,
-      words: ['WORD'],
-      score: 50,
-      startCell: { row: startTile.row, col: startTile.col },
-      mainWordLength: 4,
-      lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
-    }]
+    // Use rack-based fallback instead of board tiles
+    return [createPlaceableFallbackMove(board, rack)]
   }
   
   const gameState = {
@@ -240,17 +294,8 @@ export function generateLocal15x15RushPuzzle(
   const board = generateConnectedBoard(tileBag, true) // Force light mode for fallback
   const rack = tileBag.splice(0, 7)
   
-  // Generate fallback moves with proper hint data
-  const fallbackTiles = Array.from(board.values()).slice(0, 2)
-  const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
-  const fallbackMoves = [{
-    tiles: fallbackTiles,
-    words: ['WORD'],
-    score: 50,
-    startCell: { row: startTile.row, col: startTile.col },
-    mainWordLength: 4,
-    lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
-  }]
+  // Generate fallback moves using only rack tiles
+  const fallbackMoves = [createPlaceableFallbackMove(board, rack)]
   
   return {
     id: `local-fallback-${Date.now()}`,
@@ -258,4 +303,14 @@ export function generateLocal15x15RushPuzzle(
     rack: shuffleArray(rack),
     topMoves: fallbackMoves
   }
+}
+
+// Export function to generate top moves for any board+rack combination
+export function getTopMovesForBoard(
+  boardMap: Map<string, PlacedTile>,
+  rack: Tile[],
+  isValidWord: (word: string) => boolean,
+  isDictionaryLoaded: boolean
+): RushMove[] {
+  return generateTopMovesWithBot(boardMap, rack, isValidWord, isDictionaryLoaded)
 }

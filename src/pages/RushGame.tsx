@@ -14,7 +14,7 @@ import { RushTopMoves } from '@/components/RushTopMoves'
 import { RushLeaderboard } from '@/components/RushLeaderboard'
 import { useRushPuzzle } from '@/hooks/useRush'
 import { submitRushScore } from '@/api/rush'
-import { generateLocal15x15RushPuzzle } from '@/utils/rushPuzzleGenerator15x15'
+import { generateLocal15x15RushPuzzle, getTopMovesForBoard } from '@/utils/rushPuzzleGenerator15x15'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
 import { calculateNewMoveScore } from '@/utils/newScoring'
@@ -162,12 +162,22 @@ const RushGame = () => {
       boardMap.set(`${tile.row},${tile.col}`, tile)
     })
     
+    // If puzzle has no topMoves (API puzzle), generate them locally
+    let finalPuzzle = puzzle
+    if (puzzle.topMoves.length === 0 && isDictionaryLoaded) {
+      const localTopMoves = getTopMovesForBoard(boardMap, puzzle.rack, isValidWord, isDictionaryLoaded)
+      finalPuzzle = {
+        ...puzzle,
+        topMoves: localTopMoves
+      }
+    }
+    
     setInitialBoard(boardMap)
     setGameState({
-      puzzle,
+      puzzle: finalPuzzle,
       foundMoves: new Set(),
       pendingTiles: [],
-      remainingRack: [...puzzle.rack],
+      remainingRack: [...finalPuzzle.rack],
       isGameOver: false,
       totalScore: 0,
       hints: {
@@ -429,46 +439,52 @@ const RushGame = () => {
   const surrenderCurrentMove = () => {
     if (!gameState.puzzle || gameState.isGameOver || !currentTargetMove) return
     
-    // Clear any pending tiles first
+    // Ensure lettersUsed is populated
+    const lettersUsed = currentTargetMove.lettersUsed || currentTargetMove.tiles.map(t => t.letter).sort()
+    
+    // Show solution tiles as pending for visual feedback
     setGameState(prevState => ({
       ...prevState,
-      pendingTiles: [],
+      pendingTiles: [...currentTargetMove.tiles],
       remainingRack: [...gameState.puzzle!.rack] // Reset rack
     }))
     
     // Get the move key for the current target move
     const currentMoveKey = getMoveKey(currentTargetMove)
     
-    // Mark this move as found and add to score
-    setGameState(prev => {
-      const newFoundMoves = new Set([...prev.foundMoves, currentMoveKey])
-      const nextUnfoundIndex = prev.puzzle?.topMoves.findIndex((move, index) => 
-        !newFoundMoves.has(getMoveKey(move))
-      ) ?? 0
-      
-      return {
-        ...prev,
-        foundMoves: newFoundMoves,
-        totalScore: prev.totalScore + currentTargetMove.score,
-        hints: {
-          currentMoveIndex: nextUnfoundIndex,
-          anchorRevealed: false,
-          lengthRevealed: false,
-          lettersRevealed: false
+    // After 800ms, clear the visual tiles and mark as found
+    setTimeout(() => {
+      setGameState(prev => {
+        const newFoundMoves = new Set([...prev.foundMoves, currentMoveKey])
+        const nextUnfoundIndex = prev.puzzle?.topMoves.findIndex((move, index) => 
+          !newFoundMoves.has(getMoveKey(move))
+        ) ?? 0
+        
+        return {
+          ...prev,
+          foundMoves: newFoundMoves,
+          pendingTiles: [], // Clear the visual tiles
+          totalScore: prev.totalScore + currentTargetMove.score,
+          hints: {
+            currentMoveIndex: nextUnfoundIndex,
+            anchorRevealed: false,
+            lengthRevealed: false,
+            lettersRevealed: false
+          }
         }
+      })
+      
+      // Check if all moves found
+      if (gameState.foundMoves.size + 1 >= gameState.puzzle.topMoves.length) {
+        setTimeout(() => endGame(), 1000)
       }
-    })
+    }, 800)
     
     toast({
       title: "Soluzione Rivelata",
       description: `"${currentTargetMove.words.join(', ')}" per ${currentTargetMove.score} punti`,
       variant: "default"
     })
-    
-    // Check if all moves found
-    if (gameState.foundMoves.size + 1 >= gameState.puzzle.topMoves.length) {
-      setTimeout(() => endGame(), 1000)
-    }
   }
 
   // Get current target move for hints - find the first unfound move
