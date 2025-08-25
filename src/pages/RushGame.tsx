@@ -384,10 +384,10 @@ const RushGame = () => {
 
   // Generate highlight squares for hints
   const highlightSquares = []
-  if (currentTargetMove && gameState.hints.anchorRevealed && currentTargetMove.anchorCell) {
+  if (currentTargetMove && gameState.hints.anchorRevealed && currentTargetMove.startCell) {
     highlightSquares.push({
-      row: currentTargetMove.anchorCell.row,
-      col: currentTargetMove.anchorCell.col,
+      row: currentTargetMove.startCell.row,
+      col: currentTargetMove.startCell.col,
       type: 'anchor' as const
     })
   }

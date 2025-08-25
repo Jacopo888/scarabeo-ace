@@ -18,7 +18,7 @@ interface RushMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
-  anchorCell?: { row: number, col: number }
+  startCell?: { row: number, col: number }
   mainWordLength?: number
   lettersUsed?: string[]
 }
@@ -196,14 +196,18 @@ function generateTopMoves(board: Map<string, PlacedTile>, rack: Tile[]): RushMov
     .slice(0, 5)
     .map(move => {
       // Calculate hints for this move
-      const anchorCell = move.tiles.length > 0 ? { row: move.tiles[0].row, col: move.tiles[0].col } : undefined
-      const mainWord = move.words.length > 0 ? move.words[0] : ''
+      const isHorizontal = move.tiles.every(t => t.row === move.tiles[0].row)
+      const startTile = isHorizontal
+        ? move.tiles.reduce((min, t) => (t.col < min.col ? t : min), move.tiles[0])
+        : move.tiles.reduce((min, t) => (t.row < min.row ? t : min), move.tiles[0])
+      const startCell = { row: startTile.row, col: startTile.col }
+      const mainWordLength = move.words.length > 0 ? Math.max(...move.words.map(w => w.length)) : undefined
       const lettersUsed = move.tiles.map(tile => tile.letter).sort()
-      
+
       return {
         ...move,
-        anchorCell,
-        mainWordLength: mainWord.length,
+        startCell,
+        mainWordLength,
         lettersUsed
       }
     })
@@ -272,8 +276,8 @@ export function generateRushPuzzle(): RushPuzzle {
     
     // Calculate top moves
     const topMoves = generateTopMoves(board, rack)
-    
-    if (topMoves.length >= 3 && topMoves[0].score >= 50) {
+
+    if (topMoves.length >= 3 && topMoves[0].score >= 30) {
       // Convert board to array format for API response
       const boardArray: PlacedTile[] = Array.from(board.values())
       
@@ -293,14 +297,19 @@ export function generateRushPuzzle(): RushPuzzle {
   const { board } = generateConnectedBoard(tileBag)
   const rack = tileBag.splice(0, 7)
   
+  const fallbackTiles = Array.from(board.values()).slice(0, 2)
+  const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
   return {
     id: `fallback_${Date.now()}`,
     board: Array.from(board.values()),
     rack: shuffleArray(rack),
     topMoves: [{
-      tiles: Array.from(board.values()).slice(0, 2),
+      tiles: fallbackTiles,
       words: ['WORD'],
-      score: 50
+      score: 50,
+      startCell: { row: startTile.row, col: startTile.col },
+      mainWordLength: 4,
+      lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
     }]
   }
 }
