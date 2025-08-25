@@ -10,12 +10,12 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: mode === 'development' ? {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },
       '/rush': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       }

@@ -1,4 +1,4 @@
-const API_BASE = '/api'
+const API_BASE = import.meta.env.MODE === 'development' ? '/api' : import.meta.env.VITE_RATING_API_URL || '/api'
 
 export interface RushPuzzleResponse {
   puzzleId: string

@@ -163,7 +163,7 @@ export const ScrabbleBoard = ({
       return
     }
 
-    placeTileHandler(row, col, selectedTile as StoreTile | GameTile)
+    placeTileHandler(row, col, selectedTile)
     onUseSelectedTile?.()
   }
 
