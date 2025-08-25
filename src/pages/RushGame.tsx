@@ -426,6 +426,51 @@ const RushGame = () => {
     }))
   }
 
+  const surrenderCurrentMove = () => {
+    if (!gameState.puzzle || gameState.isGameOver || !currentTargetMove) return
+    
+    // Clear any pending tiles first
+    setGameState(prevState => ({
+      ...prevState,
+      pendingTiles: [],
+      remainingRack: [...gameState.puzzle!.rack] // Reset rack
+    }))
+    
+    // Get the move key for the current target move
+    const currentMoveKey = getMoveKey(currentTargetMove)
+    
+    // Mark this move as found and add to score
+    setGameState(prev => {
+      const newFoundMoves = new Set([...prev.foundMoves, currentMoveKey])
+      const nextUnfoundIndex = prev.puzzle?.topMoves.findIndex((move, index) => 
+        !newFoundMoves.has(getMoveKey(move))
+      ) ?? 0
+      
+      return {
+        ...prev,
+        foundMoves: newFoundMoves,
+        totalScore: prev.totalScore + currentTargetMove.score,
+        hints: {
+          currentMoveIndex: nextUnfoundIndex,
+          anchorRevealed: false,
+          lengthRevealed: false,
+          lettersRevealed: false
+        }
+      }
+    })
+    
+    toast({
+      title: "Soluzione Rivelata",
+      description: `"${currentTargetMove.words.join(', ')}" per ${currentTargetMove.score} punti`,
+      variant: "default"
+    })
+    
+    // Check if all moves found
+    if (gameState.foundMoves.size + 1 >= gameState.puzzle.topMoves.length) {
+      setTimeout(() => endGame(), 1000)
+    }
+  }
+
   // Get current target move for hints - find the first unfound move
   const currentTargetMove = gameState.puzzle?.topMoves.find((move, index) => 
     !gameState.foundMoves.has(getMoveKey(move))
@@ -522,7 +567,7 @@ const RushGame = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-2 justify-center flex-wrap">
             <Button 
               onClick={submitMove}
               disabled={gameState.isGameOver || gameState.pendingTiles.length === 0}
@@ -539,6 +584,15 @@ const RushGame = () => {
             >
               <X className="h-4 w-4 mr-2" />
               Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={surrenderCurrentMove}
+              disabled={gameState.isGameOver || !currentTargetMove}
+              size="lg"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Arrenditi
             </Button>
           </div>
 
