@@ -12,6 +12,18 @@ const getRankIcon = (position: number) => {
   return <span className="text-sm font-medium text-muted-foreground">#{position}</span>
 }
 
+const safeFormatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return 'just now'
+    }
+    return formatDistanceToNow(date, { addSuffix: true })
+  } catch {
+    return 'just now'
+  }
+}
+
 export function RushLeaderboard() {
   const { data: leaderboard, error, isLoading } = useRushLeaderboard()
 
@@ -41,7 +53,7 @@ export function RushLeaderboard() {
           </div>
         ) : error ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Failed to load leaderboard
+            Leaderboard unavailable
           </p>
         ) : !leaderboard || leaderboard.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
@@ -66,7 +78,7 @@ export function RushLeaderboard() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-semibold">{entry.score}</span>
                   <span className="text-muted-foreground">
-                    {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                    {safeFormatDate(entry.created_at)}
                   </span>
                 </div>
               </div>

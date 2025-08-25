@@ -17,7 +17,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-function generateConnectedBoard(tileBag: Tile[]): Map<string, PlacedTile> {
+function generateConnectedBoard(tileBag: Tile[], useLight = false): Map<string, PlacedTile> {
   const board = new Map<string, PlacedTile>()
 
   // Start with a word at center (horizontally)
@@ -100,10 +100,15 @@ function generateConnectedBoard(tileBag: Tile[]): Map<string, PlacedTile> {
   }
 
   // Simulate additional moves to make it look mid-game
-  return simulateAdditionalMoves(board, tileBag)
+  return simulateAdditionalMoves(board, tileBag, useLight)
 }
 
-function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[]): Map<string, PlacedTile> {
+function simulateAdditionalMoves(board: Map<string, PlacedTile>, tileBag: Tile[], useLight = false): Map<string, PlacedTile> {
+  // Skip heavy simulation in light mode
+  if (useLight) {
+    return board
+  }
+  
   const bot = new ScrabbleBot((word) => true, true) // Accept all words for simulation
   
   for (let moveCount = 0; moveCount < 2; moveCount++) {
@@ -205,14 +210,15 @@ function generateTopMovesWithBot(
 
 export function generateLocal15x15RushPuzzle(
   isValidWord: (word: string) => boolean,
-  isDictionaryLoaded: boolean
+  isDictionaryLoaded: boolean,
+  useLight = false
 ): RushPuzzle {
   let attempts = 0
-  const maxAttempts = 5
+  const maxAttempts = useLight ? 1 : 5
   
   while (attempts < maxAttempts) {
     const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-    const board = generateConnectedBoard(tileBag)
+    const board = generateConnectedBoard(tileBag, useLight)
     const rack = tileBag.splice(0, 7)
     
     const topMoves = generateTopMovesWithBot(board, rack, isValidWord, isDictionaryLoaded)
@@ -229,9 +235,9 @@ export function generateLocal15x15RushPuzzle(
     attempts++
   }
   
-  // Fallback
+  // Fallback - always succeeds
   const tileBag = shuffleArray([...TILE_DISTRIBUTION])
-  const board = generateConnectedBoard(tileBag)
+  const board = generateConnectedBoard(tileBag, true) // Force light mode for fallback
   const rack = tileBag.splice(0, 7)
   
   // Generate fallback moves with proper hint data

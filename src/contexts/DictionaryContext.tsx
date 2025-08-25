@@ -46,14 +46,14 @@ export const DictionaryProvider: React.FC<DictionaryProviderProps> = ({ children
 
       // Create the Set in chunks to avoid blocking the main thread
       const wordsSet = new Set<string>();
-      const chunkSize = 1000;
+      const chunkSize = 500; // Smaller chunks
       
       for (let i = 0; i < words.length; i += chunkSize) {
         const chunk = words.slice(i, i + chunkSize);
         chunk.forEach(word => wordsSet.add(word));
         
-        // Yield control to allow UI updates
-        if (i % (chunkSize * 5) === 0) {
+        // Yield control more frequently to allow UI updates
+        if (i % chunkSize === 0) {
           await new Promise(resolve => setTimeout(resolve, 0));
         }
       }

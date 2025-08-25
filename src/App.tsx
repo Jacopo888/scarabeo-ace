@@ -21,6 +21,7 @@ import { DictionaryProvider } from "./contexts/DictionaryContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { NotificationSystem } from "./components/NotificationSystem";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,11 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dictionary" element={<Dictionary />} />
           <Route path="/lobby" element={<Lobby />} />
-          <Route path="/rush" element={<RushGame />} />
+          <Route path="/rush" element={
+            <ErrorBoundary>
+              <RushGame />
+            </ErrorBoundary>
+          } />
           <Route path="/daily" element={<Daily />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -130,6 +130,8 @@ REDIS_URL=redis://localhost:6379
 PORT=4000
 ```
 
+**Production deployment:** Set `VITE_RATING_API_URL` to your production API URL. If not set, the frontend will use local fallback puzzle generation.
+
 Drizzle is used for database migrations:
 
 ```sh

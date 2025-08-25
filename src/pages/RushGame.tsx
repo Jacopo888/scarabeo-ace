@@ -64,8 +64,9 @@ const RushGame = () => {
   const [currentPuzzleId, setCurrentPuzzleId] = useState<string | null>(null)
   const [showSubmissionError, setShowSubmissionError] = useState(false)
   const [submissionError, setSubmissionError] = useState<string>('')
+  const [isRefetching, setIsRefetching] = useState(false)
   
-  const { timeLeft, isRunning, start, formatTime } = useCountdown()
+  const { timeLeft, isRunning, start, stop, formatTime } = useCountdown()
   const { isValidWord, isLoaded: isDictionaryLoaded } = useDictionary()
   const { user } = useAuth()
   const { toast } = useToast()
@@ -82,11 +83,13 @@ const RushGame = () => {
       }
       initializePuzzle(puzzle)
       setCurrentPuzzleId(apiPuzzle.puzzleId)
+      setIsRefetching(false)
     } else if (puzzleError && isDictionaryLoaded) {
-      // Fallback to local puzzle
+      // Fallback to local puzzle with light mode if API failed
       const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
+      setIsRefetching(false)
       
       toast({
         title: "Playing Offline",
@@ -97,13 +100,59 @@ const RushGame = () => {
   }, [apiPuzzle, puzzleError, isDictionaryLoaded])
 
   useEffect(() => {
+    // Cleanup timer on unmount to prevent zombie timers
+    return () => {
+      stop()
+    }
+  }, [])
+
+  useEffect(() => {
     if (timeLeft === 0 && isRunning) {
       endGame()
     }
   }, [timeLeft, isRunning])
 
-  const fetchNewPuzzle = () => {
-    refetchPuzzle()
+  const resetAndRefetch = async () => {
+    if (isRefetching) return
+    
+    setIsRefetching(true)
+    stop() // Stop current timer
+    
+    // Reset game state immediately
+    setGameState({
+      puzzle: null,
+      foundMoves: new Set(),
+      pendingTiles: [],
+      remainingRack: [],
+      isGameOver: false,
+      totalScore: 0,
+      hints: {
+        currentMoveIndex: 0,
+        anchorRevealed: false,
+        lengthRevealed: false,
+        lettersRevealed: false
+      }
+    })
+    setSelectedTileIndex(null)
+    setCurrentPuzzleId(null)
+    
+    try {
+      await refetchPuzzle()
+    } catch (error) {
+      // If refetch fails, generate local puzzle immediately
+      if (isDictionaryLoaded) {
+        const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
+        initializePuzzle(localPuzzle)
+        setCurrentPuzzleId(null)
+        setIsRefetching(false)
+        
+        toast({
+          title: "Using Local Puzzle",
+          description: "API unavailable, generated offline puzzle",
+          variant: "default"
+        })
+      }
+    }
   }
 
   const initializePuzzle = (puzzle: RushPuzzle) => {
@@ -410,7 +459,7 @@ const RushGame = () => {
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="text-center">
           <p className="text-lg mb-4">Failed to load puzzle</p>
-          <Button onClick={fetchNewPuzzle}>Try Again</Button>
+          <Button onClick={resetAndRefetch}>Try Again</Button>
         </div>
       </div>
     )
@@ -512,8 +561,8 @@ const RushGame = () => {
                 <p className="text-xl font-semibold mb-4">
                   Final Score: {gameState.totalScore} points
                 </p>
-                <Button onClick={fetchNewPuzzle} size="lg">
-                  New Puzzle
+                <Button onClick={resetAndRefetch} size="lg" disabled={isRefetching}>
+                  {isRefetching ? 'Loading...' : 'New Puzzle'}
                 </Button>
               </CardContent>
             </Card>
