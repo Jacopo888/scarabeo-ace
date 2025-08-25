@@ -7,13 +7,64 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      daily_puzzles: {
+        Row: {
+          best_score: number
+          board: Json
+          created_at: string | null
+          id: string
+          rack: Json
+          yyyymmdd: number
+        }
+        Insert: {
+          best_score: number
+          board: Json
+          created_at?: string | null
+          id?: string
+          rack: Json
+          yyyymmdd: number
+        }
+        Update: {
+          best_score?: number
+          board?: Json
+          created_at?: string | null
+          id?: string
+          rack?: Json
+          yyyymmdd?: number
+        }
+        Relationships: []
+      }
+      daily_scores: {
+        Row: {
+          created_at: string | null
+          id: string
+          score: number
+          user_id: string
+          yyyymmdd: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          score: number
+          user_id: string
+          yyyymmdd: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          score?: number
+          user_id?: string
+          yyyymmdd?: number
+        }
+        Relationships: []
+      }
       game_chats: {
         Row: {
           created_at: string

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { ArrowLeft, Timer, Trophy, Zap, Check, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { ArrowLeft, Timer, Trophy, Zap, Check, X, Calendar } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useDictionary } from '@/contexts/DictionaryContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -22,6 +22,8 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { Tile, PlacedTile } from '@/types/game'
 import { Tile as StoreTile } from '@/store/game'
 import { RushPuzzle, RushMove, RushGameState } from '@/types/rush'
+import { DailyPuzzle } from '@/types/daily'
+import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
 
 function getMoveKey(move: RushMove): string {
@@ -45,6 +47,8 @@ function createMovesFromTiles(tiles: PlacedTile[]): RushMove {
 }
 
 const RushGame = () => {
+  const location = useLocation()
+  const [isDailyMode, setIsDailyMode] = useState(false)
   const [gameState, setGameState] = useState<RushGameState>({
     puzzle: null,
     foundMoves: new Set(),
@@ -73,19 +77,41 @@ const RushGame = () => {
   const isMobile = useIsMobile()
   const { data: apiPuzzle, error: puzzleError, mutate: refetchPuzzle } = useRushPuzzle()
 
+  // Check for daily mode
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const isDaily = searchParams.get('daily') === 'true'
+    setIsDailyMode(isDaily)
+    
+    if (isDaily && isDictionaryLoaded) {
+      const dailyPuzzleData = sessionStorage.getItem('daily-puzzle')
+      if (dailyPuzzleData) {
+        const dailyPuzzle: DailyPuzzle = JSON.parse(dailyPuzzleData)
+        const rushPuzzle: RushPuzzle = {
+          id: dailyPuzzle.id,
+          board: dailyPuzzle.board,
+          rack: dailyPuzzle.rack,
+          topMoves: []
+        }
+        initializePuzzle(rushPuzzle)
+      }
+    }
+  }, [location, isDictionaryLoaded])
+
+  useEffect(() => {
+    if (isDailyMode) return
+    
     if (apiPuzzle) {
       const puzzle: RushPuzzle = {
         id: apiPuzzle.puzzleId,
         board: apiPuzzle.board,
         rack: apiPuzzle.rack,
-        topMoves: [] // Will be handled by local generation for now
+        topMoves: []
       }
       initializePuzzle(puzzle)
       setCurrentPuzzleId(apiPuzzle.puzzleId)
       setIsRefetching(false)
     } else if (puzzleError && isDictionaryLoaded) {
-      // Fallback to local puzzle with light mode if API failed
       const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded)
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
@@ -97,7 +123,7 @@ const RushGame = () => {
         variant: "default"
       })
     }
-  }, [apiPuzzle, puzzleError, isDictionaryLoaded])
+  }, [apiPuzzle, puzzleError, isDictionaryLoaded, isDailyMode])
 
   useEffect(() => {
     // Cleanup timer on unmount to prevent zombie timers
@@ -359,13 +385,42 @@ const RushGame = () => {
     setSelectedTileIndex(null)
   }
 
+  const submitDailyScore = async (score: number) => {
+    try {
+      const today = new Date()
+      const utc = new Date(today.getTime() + today.getTimezoneOffset() * 60000)
+      const yyyymmdd = utc.getFullYear() * 10000 + (utc.getMonth() + 1) * 100 + utc.getDate()
+      
+      const userId = user?.id || `anon-${Date.now()}`
+      
+      if (!user) {
+        localStorage.setItem(`daily:${yyyymmdd}:played`, 'true')
+        localStorage.setItem(`daily:${yyyymmdd}:score`, score.toString())
+      }
+
+      await supabase.from('daily_scores').upsert({
+        user_id: userId,
+        yyyymmdd,
+        score
+      }, { onConflict: 'user_id,yyyymmdd' })
+    } catch (error) {
+      console.error('Error submitting daily score:', error)
+    }
+  }
+
   const endGame = async () => {
     if (!gameState.puzzle || gameState.isGameOver) return
     
     setGameState(prev => ({ ...prev, isGameOver: true }))
-    
-    // Submit score if user is authenticated and we have a puzzle ID
-    if (user && currentPuzzleId) {
+
+    if (isDailyMode) {
+      await submitDailyScore(gameState.totalScore)
+      toast({
+        title: "Daily Challenge Complete!",
+        description: `Your score of ${gameState.totalScore} points has been recorded.`,
+        variant: "default"
+      })
+    } else if (user && currentPuzzleId) {
       try {
         await submitRushScore({
           puzzleId: currentPuzzleId,
@@ -383,12 +438,6 @@ const RushGame = () => {
         setSubmissionError(error instanceof Error ? error.message : 'Failed to submit score')
         setShowSubmissionError(true)
       }
-    } else if (!user) {
-      toast({
-        title: "Score Not Saved",
-        description: "Sign in to save your scores to the leaderboard.",
-        variant: "default"
-      })
     }
   }
 
@@ -538,8 +587,8 @@ const RushGame = () => {
           </Button>
         </Link>
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Zap className="h-8 w-8 text-primary" />
-          Rush 90s
+          {isDailyMode ? <Calendar className="h-8 w-8 text-yellow-500" /> : <Zap className="h-8 w-8 text-primary" />}
+          {isDailyMode ? 'Daily Rush Challenge' : 'Rush 90s'}
         </h1>
       </div>
 

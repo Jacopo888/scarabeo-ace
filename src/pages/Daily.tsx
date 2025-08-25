@@ -1,96 +1,317 @@
 import { useState, useEffect } from 'react';
-import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, Trophy, Users, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDictionary } from '@/contexts/DictionaryContext';
+import { generateLocal15x15RushPuzzle } from '@/utils/rushPuzzleGenerator15x15';
+import { DailyPuzzle, DailyScore, DailyLeaderboardEntry } from '@/types/daily';
+import { toast } from 'sonner';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const getTodayNumber = (): number => {
+  const today = new Date();
+  const utc = new Date(today.getTime() + today.getTimezoneOffset() * 60000);
+  return utc.getFullYear() * 10000 + (utc.getMonth() + 1) * 100 + utc.getDate();
+};
 
-interface DailyPuzzle {
-  yyyymmdd: number;
-  board: any[];
-  rack: any[];
-  bestScoreToBeat: number;
-}
-
-interface LeaderboardEntry {
-  userId: string;
-  score: number;
-}
+const formatDateFromNumber = (yyyymmdd: number): string => {
+  const str = yyyymmdd.toString();
+  const year = str.slice(0, 4);
+  const month = str.slice(4, 6);
+  const day = str.slice(6, 8);
+  return `${year}-${month}-${day}`;
+};
 
 const Daily = () => {
-  const { data } = useSWR<DailyPuzzle>('/api/daily', fetcher);
-  const [word, setWord] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isValidWord, isLoaded: isDictionaryLoaded } = useDictionary();
+  const [dailyPuzzle, setDailyPuzzle] = useState<DailyPuzzle | null>(null);
+  const [leaderboard, setLeaderboard] = useState<DailyLeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasPlayedToday, setHasPlayedToday] = useState(false);
+  const [userScore, setUserScore] = useState<number | null>(null);
 
-  const doneKey = data ? `daily:${data.yyyymmdd}:done` : '';
+  const todayNumber = getTodayNumber();
 
   useEffect(() => {
-    if (data && localStorage.getItem(doneKey)) {
-      setSubmitted(true);
-    }
-  }, [data, doneKey]);
+    loadDailyPuzzle();
+    loadLeaderboard();
+    checkIfPlayedToday();
+  }, [user]);
 
-  const submit = async () => {
-    if (!data) return;
-    const s = word.length;
-    setScore(s);
-    setSubmitted(true);
-    localStorage.setItem(doneKey, 'true');
+  const loadDailyPuzzle = async () => {
     try {
-      await fetch('/api/daily/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'anon', score: s }),
-      });
-    } catch {
-      /* ignore */
+      // Try to fetch today's puzzle
+      const { data: existingPuzzle, error } = await supabase
+        .from('daily_puzzles')
+        .select('*')
+        .eq('yyyymmdd', todayNumber)
+        .single();
+
+      if (existingPuzzle) {
+        setDailyPuzzle({
+          ...existingPuzzle,
+          board: existingPuzzle.board as any,
+          rack: existingPuzzle.rack as any
+        });
+      } else if (error?.code === 'PGRST116') {
+        // No puzzle exists, create one
+        await createTodaysPuzzle();
+      } else {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error loading daily puzzle:', error);
+      toast.error('Failed to load daily puzzle');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const share = async () => {
-    if (!data || score == null) return;
-    const text = `Daily ${data.yyyymmdd}: ${score} points`;
+  const createTodaysPuzzle = async () => {
+    try {
+      // Generate a complex puzzle with enhanced simulation
+      const puzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false);
+      const bestScore = puzzle.topMoves[0]?.score || 50;
+
+      const newPuzzle = {
+        yyyymmdd: todayNumber,
+        board: puzzle.board as any,
+        rack: puzzle.rack as any,
+        best_score: bestScore,
+      };
+
+      const { data, error } = await supabase
+        .from('daily_puzzles')
+        .insert(newPuzzle)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          // Conflict - another user created it, fetch the existing one
+          await loadDailyPuzzle();
+          return;
+        }
+        throw error;
+      }
+
+      setDailyPuzzle({
+        ...data,
+        board: data.board as any,
+        rack: data.rack as any
+      });
+      toast.success('New daily puzzle generated!');
+    } catch (error) {
+      console.error('Error creating daily puzzle:', error);
+      toast.error('Failed to create daily puzzle');
+    }
+  };
+
+  const loadLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_scores')
+        .select('user_id, score, created_at')
+        .eq('yyyymmdd', todayNumber)
+        .order('score', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setLeaderboard(data || []);
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    }
+  };
+
+  const checkIfPlayedToday = async () => {
+    if (!user) {
+      // Check localStorage for anonymous users
+      const localKey = `daily:${todayNumber}:played`;
+      const played = localStorage.getItem(localKey);
+      if (played) {
+        setHasPlayedToday(true);
+        setUserScore(parseInt(localStorage.getItem(`daily:${todayNumber}:score`) || '0'));
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('daily_scores')
+        .select('score')
+        .eq('yyyymmdd', todayNumber)
+        .eq('user_id', user.id)
+        .single();
+
+      if (data) {
+        setHasPlayedToday(true);
+        setUserScore(data.score);
+      }
+    } catch (error) {
+      // User hasn't played today, which is fine
+    }
+  };
+
+  const handlePlayDaily = () => {
+    if (!dailyPuzzle) return;
+    // Store the daily puzzle in sessionStorage so RushGame can use it
+    sessionStorage.setItem('daily-puzzle', JSON.stringify(dailyPuzzle));
+    navigate('/rush?daily=true');
+  };
+
+  const handleShare = async () => {
+    if (userScore === null) return;
+    const text = `Daily Scrabble ${formatDateFromNumber(todayNumber)}: ${userScore} points\n\nPlay at: ${window.location.origin}`;
     try {
       await navigator.clipboard.writeText(text);
+      toast.success('Results copied to clipboard!');
     } catch {
-      /* ignore */
+      toast.error('Failed to copy to clipboard');
     }
   };
 
-  const { data: leaderboard } = useSWR<LeaderboardEntry[]>(
-    submitted && data ? `/api/daily/leaderboard?yyyymmdd=${data.yyyymmdd}&limit=10` : null,
-    fetcher
-  );
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
-  if (!data) return <div className="p-4">Loading...</div>;
+  if (!dailyPuzzle) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              Daily Puzzle
+            </CardTitle>
+            <CardDescription>
+              Failed to load today's puzzle. Please try again later.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 space-y-4">
-      {!submitted && (
-        <div className="space-y-2">
-          <p>Best score to beat: {data.bestScoreToBeat}</p>
-          <Input value={word} onChange={(e) => setWord(e.target.value)} placeholder="Your play" />
-          <Button onClick={submit}>Submit</Button>
-        </div>
-      )}
+    <div className="container mx-auto p-6 max-w-4xl space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Daily Rush Challenge</h1>
+        <p className="text-muted-foreground">
+          {formatDateFromNumber(todayNumber)} • One puzzle per day
+        </p>
+      </div>
 
-      {submitted && (
-        <div className="space-y-4">
-          <p>Your score: {score}</p>
-          <Button onClick={share}>Share</Button>
-          <div>
-            <h3 className="font-semibold mb-2">Leaderboard</h3>
-            <ul className="space-y-1">
-              {leaderboard?.map((entry, i) => (
-                <li key={i}>
-                  {entry.userId}: {entry.score}
-                </li>
+      {/* Main Puzzle Card */}
+      <Card className="hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-yellow-500" />
+            Today's Challenge
+          </CardTitle>
+          <CardDescription>
+            Best score to beat: <strong>{dailyPuzzle.best_score} points</strong>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!hasPlayedToday ? (
+            <div className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Challenge yourself with today's Rush puzzle! Find as many high-scoring words as possible.
+              </p>
+              <Button 
+                size="lg" 
+                onClick={handlePlayDaily}
+                className="w-full sm:w-auto"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Play Daily Rush
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center space-y-4">
+              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                <h3 className="font-semibold text-green-700 dark:text-green-300">
+                  Completed! 🎉
+                </h3>
+                <p className="text-green-600 dark:text-green-400">
+                  Your score: <strong>{userScore} points</strong>
+                </p>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={handleShare} variant="outline">
+                  Share Results
+                </Button>
+                <Button onClick={handlePlayDaily} variant="outline">
+                  <Play className="h-4 w-4 mr-2" />
+                  Play Again
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Leaderboard */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            Today's Leaderboard
+          </CardTitle>
+          <CardDescription>
+            Top players for {formatDateFromNumber(todayNumber)}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leaderboard.length > 0 ? (
+            <div className="space-y-2">
+              {leaderboard.map((entry, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center justify-between p-3 rounded-lg ${
+                    entry.user_id === user?.id 
+                      ? 'bg-primary/10 border border-primary/20' 
+                      : 'bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`font-bold ${
+                      index === 0 ? 'text-yellow-500' :
+                      index === 1 ? 'text-gray-400' :
+                      index === 2 ? 'text-amber-600' : ''
+                    }`}>
+                      #{index + 1}
+                    </span>
+                    <span className="font-medium">
+                      {entry.user_id === user?.id ? 'You' : 
+                       entry.user_id.startsWith('anon') ? 'Anonymous' : 
+                       entry.user_id}
+                    </span>
+                  </div>
+                  <span className="font-bold">
+                    {entry.score} points
+                  </span>
+                </div>
               ))}
-            </ul>
-          </div>
-        </div>
-      )}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">
+              No scores yet today. Be the first to play!
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
