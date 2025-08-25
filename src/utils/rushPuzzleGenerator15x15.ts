@@ -156,13 +156,12 @@ function generateTopMovesWithBot(
   if (!isDictionaryLoaded) {
     // Fallback moves if dictionary not loaded with proper hint data
     const fallbackTiles = Array.from(board.values()).slice(0, 2)
+    const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
     return [{
       tiles: fallbackTiles,
       words: ['WORD'],
       score: 50,
-      anchorCell: fallbackTiles.length > 0 ? 
-        { row: fallbackTiles[0].row, col: fallbackTiles[0].col } : 
-        { row: 7, col: 7 },
+      startCell: { row: startTile.row, col: startTile.col },
       mainWordLength: 4,
       lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
     }]
@@ -185,16 +184,20 @@ function generateTopMovesWithBot(
     .slice(0, 5)
     .map(move => {
       // Calculate hints for this move
-      const anchorCell = move.tiles.length > 0 ? { row: move.tiles[0].row, col: move.tiles[0].col } : undefined
-      const mainWord = move.words.length > 0 ? move.words[0] : ''
+      const isHorizontal = move.tiles.every(t => t.row === move.tiles[0].row)
+      const startTile = isHorizontal
+        ? move.tiles.reduce((min, t) => (t.col < min.col ? t : min), move.tiles[0])
+        : move.tiles.reduce((min, t) => (t.row < min.row ? t : min), move.tiles[0])
+      const startCell = { row: startTile.row, col: startTile.col }
+      const mainWordLength = move.words.length > 0 ? Math.max(...move.words.map(w => w.length)) : undefined
       const lettersUsed = move.tiles.map(tile => tile.letter).sort()
-      
+
       return {
         tiles: move.tiles,
         words: move.words,
         score: move.score,
-        anchorCell,
-        mainWordLength: mainWord.length,
+        startCell,
+        mainWordLength,
         lettersUsed
       }
     })
@@ -213,8 +216,8 @@ export function generateLocal15x15RushPuzzle(
     const rack = tileBag.splice(0, 7)
     
     const topMoves = generateTopMovesWithBot(board, rack, isValidWord, isDictionaryLoaded)
-    
-    if (topMoves.length >= 3 && topMoves[0].score >= 45) {
+
+    if (topMoves.length >= 3 && topMoves[0].score >= 30) {
       return {
         id: `local-15x15-${Date.now()}`,
         board: Array.from(board.values()),
@@ -232,13 +235,13 @@ export function generateLocal15x15RushPuzzle(
   const rack = tileBag.splice(0, 7)
   
   // Generate fallback moves with proper hint data
+  const fallbackTiles = Array.from(board.values()).slice(0, 2)
+  const startTile = fallbackTiles[0] ?? { row: 7, col: 7 }
   const fallbackMoves = [{
-    tiles: Array.from(board.values()).slice(0, 2),
+    tiles: fallbackTiles,
     words: ['WORD'],
     score: 50,
-    anchorCell: Array.from(board.values()).length > 0 ? 
-      { row: Array.from(board.values())[0].row, col: Array.from(board.values())[0].col } : 
-      { row: 7, col: 7 },
+    startCell: { row: startTile.row, col: startTile.col },
     mainWordLength: 4,
     lettersUsed: rack.slice(0, 2).map(t => t.letter).sort()
   }]

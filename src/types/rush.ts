@@ -4,7 +4,7 @@ export interface RushMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
-  anchorCell?: { row: number, col: number }
+  startCell?: { row: number, col: number }
   mainWordLength?: number
   lettersUsed?: string[]
 }
