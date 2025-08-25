@@ -6,11 +6,15 @@ import { eq, desc, and } from 'drizzle-orm';
 import { calculateElo, Mode } from './elo';
 import { generateRushPuzzle } from './rush/puzzle';
 import { z } from 'zod';
+import analysisRouter from './routes/analysis';
 
 export const app = express();
 const port = Number(process.env.PORT) || 4000;
 app.use(cors());
 app.use(express.json());
+
+// Analysis routes
+app.use('/analysis', analysisRouter);
 
 const getUTCDateNumber = (date = new Date()) =>
   Number(date.toISOString().slice(0, 10).replace(/-/g, ''));
