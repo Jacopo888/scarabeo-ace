@@ -49,8 +49,27 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [exchangeOpen, setExchangeOpen] = useState(false)
 
+  if (!game || !gameState) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
+          <Link to="/dashboard">
+            <Button>Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const opponent = getOpponentInfo()
+  const myScore = getMyScore()
+  const currentRack = getCurrentRack()
+  const { rating: myRating } = usePlayerRating(user.id)
+  const { rating: opponentRating } = usePlayerRating(opponent?.id)
+
   const selectedTile =
-    selectedTileIndex !== null ? (getCurrentRack() as any)[selectedTileIndex] : null
+    selectedTileIndex !== null ? (currentRack as any)[selectedTileIndex] : null
 
   const handleTileSelect = (index: number) => {
     if (!isMobile) return
@@ -77,25 +96,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
       </div>
     )
   }
-
-  if (!game || !gameState) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-          <Link to="/dashboard">
-            <Button>Back to Dashboard</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  const opponent = getOpponentInfo()
-  const myScore = getMyScore()
-  const currentRack = getCurrentRack()
-  const { rating: myRating } = usePlayerRating(user.id)
-  const { rating: opponentRating } = usePlayerRating(opponent?.id)
 
   const canSubmitMove = isMyTurn && pendingTiles.length > 0
   const gameStatus = game.status === 'waiting' ? 'Waiting for second player' :
