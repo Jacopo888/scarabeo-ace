@@ -184,12 +184,13 @@ const GameContent = () => {
                 ))}
               </div>
             </div>
-            {!currentPlayer.isBot && (
-              <div className="mt-6 space-y-4">
-                <TileRack
-                  selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
-                  onTileSelect={handleTileSelect}
-                />
+            <div className="mt-6 space-y-4">
+              <TileRack
+                tiles={currentPlayer.rack}
+                selectedTiles={!currentPlayer.isBot && selectedTileIndex !== null ? [selectedTileIndex] : []}
+                onTileSelect={!currentPlayer.isBot ? handleTileSelect : undefined}
+              />
+              {!currentPlayer.isBot && (
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button
                     onClick={confirmMove}
@@ -226,8 +227,8 @@ const GameContent = () => {
                     Reshuffle Tiles
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

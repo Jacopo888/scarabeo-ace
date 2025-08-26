@@ -10,6 +10,8 @@ import { calculateNewMoveScore } from '@/utils/newScoring'
 import { canEndGame, calculateEndGamePenalty } from '@/utils/gameRules'
 import { useDictionary } from '@/contexts/DictionaryContext'
 
+const API_BASE = import.meta.env.VITE_RATING_API_URL || (import.meta.env.MODE === 'development' ? '/api' : '')
+
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array]
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -346,16 +348,18 @@ export const useMultiplayerGame = (gameId: string) => {
           game.turn_duration === '1h' ? 'blitz'
           : game.turn_duration === '6h' ? 'rapid'
           : 'async'
-        fetch('/rating/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            player1Id: Number(game.player1_id),
-            player2Id: Number(game.player2_id),
-            winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
-            mode
-          })
-        }).catch(err => console.error('rating report error', err))
+        if (API_BASE) {
+          fetch(`${API_BASE}/rating/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              player1Id: Number(game.player1_id),
+              player2Id: Number(game.player2_id),
+              winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
+              mode
+            })
+          }).catch(err => console.error('rating report error', err))
+        }
       }
 
     } catch (error) {
@@ -511,16 +515,18 @@ export const useMultiplayerGame = (gameId: string) => {
           game.turn_duration === '1h' ? 'blitz'
           : game.turn_duration === '6h' ? 'rapid'
           : 'async'
-        fetch('/rating/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            player1Id: Number(game.player1_id),
-            player2Id: Number(game.player2_id),
-            winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
-            mode
-          })
-        }).catch(err => console.error('rating report error', err))
+        if (API_BASE) {
+          fetch(`${API_BASE}/rating/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              player1Id: Number(game.player1_id),
+              player2Id: Number(game.player2_id),
+              winnerId: gameUpdate.winner_id ? Number(gameUpdate.winner_id) : null,
+              mode
+            })
+          }).catch(err => console.error('rating report error', err))
+        }
       }
 
     } catch (error) {
