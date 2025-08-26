@@ -105,13 +105,14 @@ export const useGame = () => {
     if (tileIndex === -1) return // Tile not found in pending tiles
     
     const tile = pendingTiles[tileIndex]
-    
+    const returnedTile = tile.isBlank ? { ...tile, letter: '' } : tile
+
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const newPlayers = [...prev.players]
       newPlayers[prev.currentPlayerIndex] = {
         ...currentPlayer,
-        rack: [...currentPlayer.rack, tile]
+        rack: [...currentPlayer.rack, returnedTile]
       }
       
       return {

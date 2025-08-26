@@ -6,6 +6,7 @@ import { TileRack } from "@/components/TileRack"
 import { TileActions } from "@/components/TileActions"
 import { DictionaryLoader } from "@/components/DictionaryLoader"
 import { AnalysisPanel } from "@/components/AnalysisPanel"
+import { BlankTileDialog } from "@/components/BlankTileDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Trophy, BarChart3 } from "lucide-react"
@@ -31,6 +32,7 @@ const GameContent = () => {
 
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+  const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
 
   const selectedTile = selectedTileIndex !== null 
     ? { 
@@ -156,6 +158,18 @@ const GameContent = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      <BlankTileDialog
+        open={!!blankTile}
+        onOpenChange={(open) => {
+          if (!open) setBlankTile(null)
+        }}
+        onSelect={(letter) => {
+          if (blankTile) {
+            placeTile(blankTile.row, blankTile.col, { ...blankTile.tile, letter })
+            setBlankTile(null)
+          }
+        }}
+      />
       <div className="mb-4 flex items-center gap-4">
         <Link to="/">
           <Button variant="outline" size="sm">
@@ -180,7 +194,11 @@ const GameContent = () => {
                   const gameTile = 'value' in tile && !('points' in tile)
                     ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
                     : tile as any
-                  placeTile(row, col, gameTile)
+                  if (gameTile.isBlank && gameTile.letter === '') {
+                    setBlankTile({ row, col, tile: gameTile })
+                  } else {
+                    placeTile(row, col, gameTile)
+                  }
                 }}
                 onPickupTile={pickupTile}
               />

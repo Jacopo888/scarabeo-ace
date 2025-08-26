@@ -23,6 +23,7 @@ export const TileRack = ({ tiles, selectedTiles = [], onTileSelect, onTileDragSt
             key={index}
             letter={tile.letter}
             points={('value' in tile ? (tile as any).value : (tile as any).points) as number}
+            isBlank={(tile as any).isBlank}
             isSelected={selectedTiles.includes(index)}
             isDragging={draggingIndex === index}
             onSelect={() => onTileSelect?.(index)}
