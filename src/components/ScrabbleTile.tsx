@@ -9,6 +9,7 @@ interface ScrabbleTileProps {
   isBlank?: boolean
   isOnBoard?: boolean
   isDragging?: boolean
+  draggable?: boolean
   onSelect?: () => void
   onDragStart?: (e: React.DragEvent) => void
   onDragEnd?: (e: React.DragEvent) => void
@@ -22,6 +23,7 @@ export const ScrabbleTile = ({
   isBlank = false,
   isOnBoard = false,
   isDragging = false,
+  draggable = !isOnBoard,
   onSelect,
   onDragStart,
   onDragEnd,
@@ -38,14 +40,14 @@ export const ScrabbleTile = ({
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
         "w-12 h-12 bg-tile border-2 border-tile-text rounded-md flex flex-col items-center justify-center transition-all shadow-md select-none",
-        !isOnBoard && "cursor-grab",
-        isOnBoard && "cursor-pointer",
+        draggable && "cursor-grab",
+        !draggable && isOnBoard && "cursor-pointer",
         isSelected && "border-primary bg-primary/10",
         isDragging && "opacity-50 cursor-grabbing",
         isBlank && "bg-yellow-100",
         className
       )}
-      draggable={!isOnBoard && !isMobile}
+      draggable={draggable && !isMobile}
       onClick={onSelect}
       onDragStart={onDragStart as any}
       onDragEnd={onDragEnd as any}

@@ -92,6 +92,7 @@ export const ScrabbleBoard = ({
   const boardRef = useRef<HTMLDivElement>(null)
   const [boardScale, setBoardScale] = useState(1)
   const [hoverSquare, setHoverSquare] = useState<string | null>(null)
+  const [draggingTile, setDraggingTile] = useState<string | null>(null)
   const storeBoard = useGameStore(s => s.board)
   const storePlaceTile = useGameStore(s => s.placeTile)
   
@@ -129,6 +130,12 @@ export const ScrabbleBoard = ({
       const data = JSON.parse(e.dataTransfer.getData("application/json"))
       if (data.source === "rack") {
         placeTileHandler(row, col, data.tile as any)
+      } else if (data.source === "board") {
+        if (data.row === row && data.col === col) return
+        if (onPickupTile) {
+          onPickupTile(data.row, data.col)
+          placeTileHandler(row, col, data.tile as any)
+        }
       }
     } catch (error) {
       console.error("Failed to parse drop data:", error)
@@ -174,6 +181,24 @@ export const ScrabbleBoard = ({
 
     placeTileHandler(row, col, tileToPlace)
     onUseSelectedTile?.()
+  }
+
+  const handleTileDragStart = (
+    e: React.DragEvent,
+    row: number,
+    col: number,
+    tile: StoreTile | GameTile
+  ) => {
+    setDraggingTile(`${row},${col}`)
+    const { row: _r, col: _c, ...tileData } = tile as any
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ source: "board", row, col, tile: tileData })
+    )
+  }
+
+  const handleTileDragEnd = () => {
+    setDraggingTile(null)
   }
 
   const renderSquare = (row: number, col: number) => {
@@ -223,6 +248,10 @@ export const ScrabbleBoard = ({
               letter={displayTile.letter}
               points={('value' in displayTile ? displayTile.value : displayTile.points) as number}
               isOnBoard={true}
+              draggable={!!pendingTile && !disabled}
+              isDragging={draggingTile === key}
+              onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
+              onDragEnd={pendingTile ? handleTileDragEnd : undefined}
               className={cn(
                 "w-8 h-8 text-[10px]",
                 pendingTile && "ring-2 ring-primary/50" // Highlight pending tiles
