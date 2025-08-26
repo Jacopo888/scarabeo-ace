@@ -1,6 +1,6 @@
-// Local fallback puzzle generator for 15x15 Rush mode
+// Local fallback puzzle generator for 15x15 Puzzle mode
 import { Tile, PlacedTile, TILE_DISTRIBUTION } from '@/types/game'
-import { RushPuzzle, RushMove } from '@/types/rush'
+import { Puzzle, PuzzleMove } from '@/types/puzzle'
 import { ScrabbleBot } from '@/ai/ScrabbleBot'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
@@ -164,7 +164,7 @@ function simulateAdditionalMoves(
 }
 
 // Helper to create plausible moves using only rack tiles
-function createPlaceableFallbackMove(boardMap: Map<string, PlacedTile>, rack: Tile[]): RushMove {
+function createPlaceableFallbackMove(boardMap: Map<string, PlacedTile>, rack: Tile[]): PuzzleMove {
   // Find free cells adjacent to existing tiles
   const adjacentCells: Array<{row: number, col: number}> = []
   
@@ -231,7 +231,7 @@ function generateTopMovesWithBot(
   rack: Tile[], 
   isValidWord: (word: string) => boolean,
   isDictionaryLoaded: boolean
-): RushMove[] {
+): PuzzleMove[] {
   const bot = new ScrabbleBot(isValidWord, isDictionaryLoaded)
   
   if (!isDictionaryLoaded) {
@@ -321,12 +321,12 @@ function generateTopMovesWithBot(
   return finalMoves
 }
 
-export function generateLocal15x15RushPuzzle(
+export function generateLocal15x15Puzzle(
   isValidWord: (word: string) => boolean,
   isDictionaryLoaded: boolean,
   useLight = false,
   simulationTurns = 2
-): RushPuzzle {
+): Puzzle {
   let attempts = 0
   const maxAttempts = useLight ? 1 : 5
   
@@ -371,6 +371,6 @@ export function getTopMovesForBoard(
   rack: Tile[],
   isValidWord: (word: string) => boolean,
   isDictionaryLoaded: boolean
-): RushMove[] {
+): PuzzleMove[] {
   return generateTopMovesWithBot(boardMap, rack, isValidWord, isDictionaryLoaded)
 }

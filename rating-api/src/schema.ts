@@ -17,7 +17,7 @@ export const games = pgTable('games', {
   winnerId: integer('winner_id').references(() => players.id),
 });
 
-export const rushPuzzles = pgTable('rush_puzzles', {
+export const puzzlePuzzles = pgTable('puzzle_puzzles', {
   id: uuid('id').primaryKey().defaultRandom(),
   board: jsonb('board').notNull(),
   rack: jsonb('rack').notNull(),
@@ -25,21 +25,21 @@ export const rushPuzzles = pgTable('rush_puzzles', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const rushScores = pgTable(
-  'rush_scores',
+export const puzzleScores = pgTable(
+  'puzzle_scores',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: text('user_id').notNull(),
     puzzleId: uuid('puzzle_id')
-      .references(() => rushPuzzles.id, { onDelete: 'cascade' })
+      .references(() => puzzlePuzzles.id, { onDelete: 'cascade' })
       .notNull(),
     score: integer('score').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    puzzleIdx: index('rush_scores_puzzle_id_idx').on(table.puzzleId),
-    userIdx: index('rush_scores_user_id_idx').on(table.userId),
-    scoreIdx: index('rush_scores_score_idx').on(desc(table.score)),
+    puzzleIdx: index('puzzle_scores_puzzle_id_idx').on(table.puzzleId),
+    userIdx: index('puzzle_scores_user_id_idx').on(table.userId),
+    scoreIdx: index('puzzle_scores_score_idx').on(desc(table.score)),
   }),
 );
 

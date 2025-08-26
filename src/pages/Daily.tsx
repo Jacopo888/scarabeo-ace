@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionary } from '@/contexts/DictionaryContext';
-import { generateLocal15x15RushPuzzle } from '@/utils/rushPuzzleGenerator15x15';
+import { generateLocal15x15Puzzle } from '@/utils/puzzleGenerator15x15';
 import { DailyPuzzle, DailyScore, DailyLeaderboardEntry } from '@/types/daily';
 import { toast } from 'sonner';
 
@@ -74,7 +74,7 @@ const Daily = () => {
   const createTodaysPuzzle = async () => {
     try {
       // Generate a complex puzzle with 8 simulation turns for more challenging gameplay
-      const puzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 8);
+      const puzzle = generateLocal15x15Puzzle(isValidWord, isDictionaryLoaded, false, 8);
       const bestScore = puzzle.topMoves[0]?.score || 50;
 
       const newPuzzle = {
@@ -158,9 +158,9 @@ const Daily = () => {
 
   const handlePlayDaily = () => {
     if (!dailyPuzzle) return;
-    // Store the daily puzzle in sessionStorage so RushGame can use it
+    // Store the daily puzzle in sessionStorage so PuzzleGame can use it
     sessionStorage.setItem('daily-puzzle', JSON.stringify(dailyPuzzle));
-    navigate('/rush?daily=true');
+    navigate('/puzzle?daily=true');
   };
 
   const handleShare = async () => {
@@ -206,7 +206,7 @@ const Daily = () => {
     <div className="container mx-auto p-6 max-w-4xl space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Daily Rush Challenge</h1>
+        <h1 className="text-3xl font-bold">Daily Puzzle Challenge</h1>
         <p className="text-muted-foreground">
           {formatDateFromNumber(todayNumber)} • One puzzle per day
         </p>
@@ -227,7 +227,7 @@ const Daily = () => {
           {!hasPlayedToday ? (
             <div className="text-center space-y-4">
               <p className="text-muted-foreground">
-                Challenge yourself with today's Rush puzzle! Find as many high-scoring words as possible.
+                Challenge yourself with today's puzzle! Find as many high-scoring words as possible.
               </p>
               <Button 
                 size="lg" 
@@ -235,7 +235,7 @@ const Daily = () => {
                 className="w-full sm:w-auto"
               >
                 <Play className="h-4 w-4 mr-2" />
-                Play Daily Rush
+                Play Daily Puzzle
               </Button>
             </div>
           ) : (

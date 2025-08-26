@@ -1,6 +1,6 @@
 import { Tile, PlacedTile } from './game'
 
-export interface RushMove {
+export interface PuzzleMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
@@ -9,15 +9,15 @@ export interface RushMove {
   lettersUsed?: string[]
 }
 
-export interface RushPuzzle {
+export interface Puzzle {
   id: string
   board: PlacedTile[]  // Only occupied cells
   rack: Tile[]
-  topMoves: RushMove[]
+  topMoves: PuzzleMove[]
 }
 
-export interface RushGameState {
-  puzzle: RushPuzzle | null
+export interface PuzzleGameState {
+  puzzle: Puzzle | null
   foundMoves: Set<string>
   pendingTiles: PlacedTile[]
   remainingRack: Tile[]

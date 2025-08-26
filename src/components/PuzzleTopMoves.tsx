@@ -1,15 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Trophy, Eye, EyeOff } from 'lucide-react'
-import { RushMove } from '@/types/rush'
+import { PuzzleMove } from '@/types/puzzle'
 import { cn } from '@/lib/utils'
 
-interface RushTopMovesProps {
-  topMoves: RushMove[]
+interface PuzzleTopMovesProps {
+  topMoves: PuzzleMove[]
   foundMoves: Set<string>
 }
 
-function getMoveKey(move: RushMove): string {
+function getMoveKey(move: PuzzleMove): string {
   // Create canonical key by sorting tiles by position
   const sortedTiles = [...move.tiles].sort((a, b) => {
     if (a.row !== b.row) return a.row - b.row
@@ -18,7 +18,7 @@ function getMoveKey(move: RushMove): string {
   return sortedTiles.map(t => `${t.row},${t.col},${t.letter}`).join('|')
 }
 
-export const RushTopMoves = ({ topMoves, foundMoves }: RushTopMovesProps) => {
+export const PuzzleTopMoves = ({ topMoves, foundMoves }: PuzzleTopMovesProps) => {
   return (
     <Card>
       <CardHeader>

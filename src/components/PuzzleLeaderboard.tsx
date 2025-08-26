@@ -2,7 +2,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Trophy, Medal, Award } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useRushLeaderboard } from '@/hooks/useRush'
+import { usePuzzleLeaderboard } from '@/hooks/usePuzzle'
 import { cn } from '@/lib/utils'
 
 const getRankIcon = (position: number) => {
@@ -24,15 +24,15 @@ const safeFormatDate = (dateString: string) => {
   }
 }
 
-export function RushLeaderboard() {
-  const { data: leaderboard, error, isLoading } = useRushLeaderboard()
+export function PuzzleLeaderboard() {
+  const { data: leaderboard, error, isLoading } = usePuzzleLeaderboard()
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="h-5 w-5" />
-          Rush 90s Leaderboard
+          Puzzle 90s Leaderboard
         </CardTitle>
       </CardHeader>
       <CardContent>

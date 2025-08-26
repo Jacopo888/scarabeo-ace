@@ -5,7 +5,7 @@ interface Letter {
   points: number
 }
 
-interface RushPuzzle {
+interface Puzzle {
   id: string
   board: (string | null)[][]
   rack: Letter[]
@@ -84,7 +84,7 @@ function tryPlaceBoardLetters(): string[] {
   return shuffleArray(letters)
 }
 
-export function generateLocalRushPuzzle(): RushPuzzle {
+export function generateLocalPuzzle(): Puzzle {
   const boardLetters = tryPlaceBoardLetters()
   const board: (string | null)[][] = []
   

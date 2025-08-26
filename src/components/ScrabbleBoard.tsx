@@ -70,7 +70,7 @@ interface ScrabbleBoardProps {
   disabled?: boolean
   selectedTile?: StoreTile | GameTile | null
   onUseSelectedTile?: () => void
-  // Rush mode props for controlled usage
+  // Puzzle mode props for controlled usage
   boardMap?: Map<string, PlacedTile>
   pendingTiles?: PlacedTile[]
   onPlaceTile?: (row: number, col: number, tile: StoreTile | GameTile) => void

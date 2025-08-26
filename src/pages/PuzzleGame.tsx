@@ -10,24 +10,24 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
-import { RushTopMoves } from '@/components/RushTopMoves'
-import { RushLeaderboard } from '@/components/RushLeaderboard'
+import { PuzzleTopMoves } from '@/components/PuzzleTopMoves'
+import { PuzzleLeaderboard } from '@/components/PuzzleLeaderboard'
 import { BlankTileDialog } from '@/components/BlankTileDialog'
-import { useRushPuzzle } from '@/hooks/useRush'
-import { submitRushScore } from '@/api/rush'
-import { generateLocal15x15RushPuzzle, getTopMovesForBoard } from '@/utils/rushPuzzleGenerator15x15'
+import { usePuzzlePuzzle } from '@/hooks/usePuzzle'
+import { submitPuzzleScore } from '@/api/puzzle'
+import { generateLocal15x15Puzzle, getTopMovesForBoard } from '@/utils/puzzleGenerator15x15'
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
 import { calculateNewMoveScore } from '@/utils/newScoring'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Tile, PlacedTile } from '@/types/game'
 import { Tile as StoreTile } from '@/store/game'
-import { RushPuzzle, RushMove, RushGameState } from '@/types/rush'
+import { Puzzle, PuzzleMove, PuzzleGameState } from '@/types/puzzle'
 import { DailyPuzzle } from '@/types/daily'
 import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
 
-function getMoveKey(move: RushMove): string {
+function getMoveKey(move: PuzzleMove): string {
   const sortedTiles = [...move.tiles].sort((a, b) => {
     if (a.row !== b.row) return a.row - b.row
     return a.col - b.col
@@ -35,7 +35,7 @@ function getMoveKey(move: RushMove): string {
   return sortedTiles.map(t => `${t.row},${t.col},${t.letter}`).join('|')
 }
 
-function createMovesFromTiles(tiles: PlacedTile[]): RushMove {
+function createMovesFromTiles(tiles: PlacedTile[]): PuzzleMove {
   const sortedTiles = [...tiles].sort((a, b) => {
     if (a.row !== b.row) return a.row - b.row
     return a.col - b.col
@@ -47,10 +47,10 @@ function createMovesFromTiles(tiles: PlacedTile[]): RushMove {
   }
 }
 
-const RushGame = () => {
+const PuzzleGame = () => {
   const location = useLocation()
   const [isDailyMode, setIsDailyMode] = useState(false)
-  const [gameState, setGameState] = useState<RushGameState>({
+  const [gameState, setGameState] = useState<PuzzleGameState>({
     puzzle: null,
     foundMoves: new Set(),
     pendingTiles: [],
@@ -77,7 +77,7 @@ const RushGame = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const isMobile = useIsMobile()
-  const { data: apiPuzzle, error: puzzleError, mutate: refetchPuzzle } = useRushPuzzle()
+  const { data: apiPuzzle, error: puzzleError, mutate: refetchPuzzle } = usePuzzlePuzzle()
 
   // Check for daily mode
   useEffect(() => {
@@ -89,13 +89,13 @@ const RushGame = () => {
       const dailyPuzzleData = sessionStorage.getItem('daily-puzzle')
       if (dailyPuzzleData) {
         const dailyPuzzle: DailyPuzzle = JSON.parse(dailyPuzzleData)
-        const rushPuzzle: RushPuzzle = {
+        const puzzleData: Puzzle = {
           id: dailyPuzzle.id,
           board: dailyPuzzle.board,
           rack: dailyPuzzle.rack,
           topMoves: []
         }
-        initializePuzzle(rushPuzzle)
+        initializePuzzle(puzzleData)
       }
     }
   }, [location, isDictionaryLoaded])
@@ -104,7 +104,7 @@ const RushGame = () => {
     if (isDailyMode) return
     
     if (apiPuzzle) {
-      const puzzle: RushPuzzle = {
+      const puzzle: Puzzle = {
         id: apiPuzzle.puzzleId,
         board: apiPuzzle.board,
         rack: apiPuzzle.rack,
@@ -114,7 +114,7 @@ const RushGame = () => {
       setCurrentPuzzleId(apiPuzzle.puzzleId)
       setIsRefetching(false)
     } else if (puzzleError && isDictionaryLoaded) {
-      const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 6)
+      const localPuzzle = generateLocal15x15Puzzle(isValidWord, isDictionaryLoaded, false, 6)
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
       setIsRefetching(false)
@@ -169,7 +169,7 @@ const RushGame = () => {
     } catch (error) {
       // If refetch fails, generate local puzzle immediately
       if (isDictionaryLoaded) {
-        const localPuzzle = generateLocal15x15RushPuzzle(isValidWord, isDictionaryLoaded, false, 6)
+        const localPuzzle = generateLocal15x15Puzzle(isValidWord, isDictionaryLoaded, false, 6)
         initializePuzzle(localPuzzle)
         setCurrentPuzzleId(null)
         setIsRefetching(false)
@@ -183,7 +183,7 @@ const RushGame = () => {
     }
   }
 
-  const initializePuzzle = (puzzle: RushPuzzle) => {
+  const initializePuzzle = (puzzle: Puzzle) => {
     // Convert board array to Map for efficient lookups
     const boardMap = new Map<string, PlacedTile>()
     puzzle.board.forEach(tile => {
@@ -426,7 +426,7 @@ const RushGame = () => {
       })
     } else if (user && currentPuzzleId) {
       try {
-        await submitRushScore({
+        await submitPuzzleScore({
           puzzleId: currentPuzzleId,
           userId: user.id,
           score: gameState.totalScore
@@ -449,7 +449,7 @@ const RushGame = () => {
     if (!user || !currentPuzzleId) return
     
     try {
-      await submitRushScore({
+      await submitPuzzleScore({
         puzzleId: currentPuzzleId,
         userId: user.id,
         score: gameState.totalScore
@@ -604,7 +604,7 @@ const RushGame = () => {
         </Link>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           {isDailyMode ? <Calendar className="h-8 w-8 text-yellow-500" /> : <Zap className="h-8 w-8 text-primary" />}
-          {isDailyMode ? 'Daily Rush Challenge' : 'Rush 90s'}
+          {isDailyMode ? 'Daily Puzzle Challenge' : 'Puzzle 90s'}
         </h1>
       </div>
 
@@ -682,7 +682,7 @@ const RushGame = () => {
               size="lg"
             >
               <X className="h-4 w-4 mr-2" />
-              Arrenditi
+              Surrender
             </Button>
           </div>
 
@@ -717,11 +717,11 @@ const RushGame = () => {
         <div className="space-y-6">
           {/* Leaderboard - Mobile: show above top moves */}
           <div className="lg:order-2">
-            <RushLeaderboard />
+            <PuzzleLeaderboard />
           </div>
           
           <div className="lg:order-1">
-            <RushTopMoves 
+            <PuzzleTopMoves
               topMoves={gameState.puzzle.topMoves}
               foundMoves={gameState.foundMoves}
             />
@@ -731,11 +731,11 @@ const RushGame = () => {
           {currentTargetMove && !gameState.isGameOver && (
             <Card className="lg:order-3">
               <CardHeader>
-                <CardTitle className="text-lg">Suggerimenti</CardTitle>
+                <CardTitle className="text-lg">Hints</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="text-sm text-muted-foreground mb-4">
-                  Suggerimenti per la mossa #{gameState.hints.currentMoveIndex + 1}
+                  Hints for move #{gameState.hints.currentMoveIndex + 1}
                 </div>
                 
                 {/* Hint 1: Anchor Cell */}
@@ -747,11 +747,11 @@ const RushGame = () => {
                     disabled={gameState.hints.anchorRevealed}
                     className="w-full justify-start"
                   >
-                    {gameState.hints.anchorRevealed ? '✓' : '1.'} Evidenzia casella di partenza
+                    {gameState.hints.anchorRevealed ? '✓' : '1.'} Highlight starting cell
                   </Button>
                   {gameState.hints.anchorRevealed && (
                     <p className="text-sm text-muted-foreground ml-4">
-                      Guarda la casella evidenziata in giallo sul tabellone
+                      See the highlighted cell on the board
                     </p>
                   )}
                 </div>
@@ -765,11 +765,11 @@ const RushGame = () => {
                     disabled={gameState.hints.lengthRevealed}
                     className="w-full justify-start"
                   >
-                    {gameState.hints.lengthRevealed ? '✓' : '2.'} Mostra numero di lettere
+                    {gameState.hints.lengthRevealed ? '✓' : '2.'} Show word length
                   </Button>
                   {gameState.hints.lengthRevealed && (
                     <p className="text-sm text-muted-foreground ml-4">
-                      La parola principale ha {currentTargetMove.mainWordLength} lettere
+                      The main word has {currentTargetMove.mainWordLength} letters
                     </p>
                   )}
                 </div>
@@ -783,11 +783,11 @@ const RushGame = () => {
                     disabled={gameState.hints.lettersRevealed}
                     className="w-full justify-start"
                   >
-                    {gameState.hints.lettersRevealed ? '✓' : '3.'} Mostra lettere da usare
+                    {gameState.hints.lettersRevealed ? '✓' : '3.'} Reveal letters to use
                   </Button>
                   {gameState.hints.lettersRevealed && (
                     <p className="text-sm text-muted-foreground ml-4">
-                      Usa queste lettere: {currentTargetMove.lettersUsed?.join(', ')}
+                      Use these letters: {currentTargetMove.lettersUsed?.join(', ')}
                     </p>
                   )}
                 </div>
@@ -818,4 +818,4 @@ const RushGame = () => {
   )
 }
 
-export default RushGame
+export default PuzzleGame
