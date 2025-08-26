@@ -39,7 +39,7 @@ const AppRoutes = () => {
         <Routes location={location}>
           <Route path="/" element={<Index />} />
           <Route path="/game" element={<Game />} />
-          <Route path="/multiplayer-game/:gameId" element={<MultiplayerGame />} />
+          <Route path="/multiplayer-game/:gameId" element={<ErrorBoundary><MultiplayerGame /></ErrorBoundary>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dictionary" element={<Dictionary />} />

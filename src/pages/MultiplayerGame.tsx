@@ -126,8 +126,13 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
             <Card>
               <CardContent className="p-6">
                 <ScrabbleBoard
-                  selectedTile={selectedTile}
+                  disabled={!isMyTurn}
+                  selectedTile={selectedTile as any}
                   onUseSelectedTile={clearSelectedTile}
+                  boardMap={gameState.board}
+                  pendingTiles={pendingTiles}
+                  onPlaceTile={(row, col, tile) => placeTile(row, col, tile as any)}
+                  onPickupTile={pickupTile}
                 />
                 <div className="flex justify-end mt-4">
                   <TileCounter
@@ -153,6 +158,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 </CardHeader>
                 <CardContent>
                   <TileRack
+                    tiles={currentRack as any}
                     selectedTiles={selectedTileIndex !== null ? [selectedTileIndex] : []}
                     onTileSelect={handleTileSelect}
                   />
