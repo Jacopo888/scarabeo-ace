@@ -49,6 +49,12 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [exchangeOpen, setExchangeOpen] = useState(false)
 
+  const opponentId =
+    game && user ? (game.player1_id === user.id ? game.player2_id : game.player1_id) : undefined
+
+  const { rating: myRating } = usePlayerRating(user?.id)
+  const { rating: opponentRating } = usePlayerRating(opponentId)
+
   if (!game || !gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -65,8 +71,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const opponent = getOpponentInfo()
   const myScore = getMyScore()
   const currentRack = getCurrentRack()
-  const { rating: myRating } = usePlayerRating(user.id)
-  const { rating: opponentRating } = usePlayerRating(opponent?.id)
 
   const selectedTile =
     selectedTileIndex !== null ? (currentRack as any)[selectedTileIndex] : null
