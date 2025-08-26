@@ -12,6 +12,7 @@ import { ScrabbleBoard } from '@/components/ScrabbleBoard'
 import { TileRack } from '@/components/TileRack'
 import { RushTopMoves } from '@/components/RushTopMoves'
 import { RushLeaderboard } from '@/components/RushLeaderboard'
+import { BlankTileDialog } from '@/components/BlankTileDialog'
 import { useRushPuzzle } from '@/hooks/useRush'
 import { submitRushScore } from '@/api/rush'
 import { generateLocal15x15RushPuzzle, getTopMovesForBoard } from '@/utils/rushPuzzleGenerator15x15'
@@ -64,6 +65,7 @@ const RushGame = () => {
     }
   })
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
+  const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: Tile } | null>(null)
   const [initialBoard, setInitialBoard] = useState<Map<string, PlacedTile>>(new Map())
   const [currentPuzzleId, setCurrentPuzzleId] = useState<string | null>(null)
   const [showSubmissionError, setShowSubmissionError] = useState(false)
@@ -227,17 +229,18 @@ const RushGame = () => {
 
   const handlePlaceTile = (row: number, col: number, tile: StoreTile | Tile) => {
     if (gameState.isGameOver) return
-    
+
     // Convert StoreTile to GameTile if needed
-    const gameTile: Tile = 'value' in tile 
-      ? { letter: tile.letter, points: tile.value, isBlank: false }
+    const gameTile: Tile = 'value' in tile && !('points' in tile)
+      ? { letter: tile.letter, points: tile.value, isBlank: (tile as any).isBlank }
       : tile as Tile
     
     
     // Find the tile in remaining rack
-    const tileIndex = gameState.remainingRack.findIndex(t => 
-      t.letter === gameTile.letter && t.points === gameTile.points
-    )
+    const tileIndex = gameState.remainingRack.findIndex(t => {
+      if (gameTile.isBlank && t.isBlank) return true
+      return t.letter === gameTile.letter && t.points === gameTile.points
+    })
     
     if (tileIndex === -1) return
     
@@ -270,13 +273,14 @@ const RushGame = () => {
     const pickedTile = gameState.pendingTiles[tileIndex]
     const newPendingTiles = [...gameState.pendingTiles]
     newPendingTiles.splice(tileIndex, 1)
-    
-    // Return tile to rack
+
+    // Return tile to rack, resetting blank tiles
     const { row: _, col: __, ...rackTile } = pickedTile
-    
+    const resetTile = rackTile.isBlank ? { ...rackTile, letter: '' } : rackTile
+
     setGameState(prev => ({
       ...prev,
-      remainingRack: [...prev.remainingRack, rackTile],
+      remainingRack: [...prev.remainingRack, resetTile],
       pendingTiles: newPendingTiles
     }))
   }
@@ -579,6 +583,18 @@ const RushGame = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      <BlankTileDialog
+        open={!!blankTile}
+        onOpenChange={(open) => {
+          if (!open) setBlankTile(null)
+        }}
+        onSelect={(letter) => {
+          if (blankTile) {
+            handlePlaceTile(blankTile.row, blankTile.col, { ...blankTile.tile, letter })
+            setBlankTile(null)
+          }
+        }}
+      />
       <div className="mb-6 flex items-center gap-4">
         <Link to="/">
           <Button variant="outline" size="sm">
@@ -619,16 +635,25 @@ const RushGame = () => {
 
           {/* Board */}
           <div className="flex justify-center">
-            <ScrabbleBoard
-              disabled={gameState.isGameOver}
-              selectedTile={selectedTile}
-              onUseSelectedTile={() => setSelectedTileIndex(null)}
-              boardMap={initialBoard}
-              pendingTiles={gameState.pendingTiles}
-              onPlaceTile={handlePlaceTile}
-              onPickupTile={handlePickupTile}
-              highlightSquares={highlightSquares}
-            />
+          <ScrabbleBoard
+            disabled={gameState.isGameOver}
+            selectedTile={selectedTile}
+            onUseSelectedTile={() => setSelectedTileIndex(null)}
+            boardMap={initialBoard}
+            pendingTiles={gameState.pendingTiles}
+            onPlaceTile={(row, col, tile) => {
+              const gameTile = 'value' in tile && !('points' in tile)
+                ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
+                : tile as Tile
+              if (gameTile.isBlank && gameTile.letter === '') {
+                setBlankTile({ row, col, tile: gameTile })
+              } else {
+                handlePlaceTile(row, col, gameTile)
+              }
+            }}
+            onPickupTile={handlePickupTile}
+            highlightSquares={highlightSquares}
+          />
           </div>
 
           {/* Action Buttons */}

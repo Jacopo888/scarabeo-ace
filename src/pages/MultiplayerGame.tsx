@@ -9,6 +9,7 @@ import { TileCounter } from '@/components/TileCounter'
 import { ExchangeTilesDialog } from '@/components/ExchangeTilesDialog'
 import { GameChat } from '@/components/GameChat'
 import { useState } from 'react'
+import { BlankTileDialog } from '@/components/BlankTileDialog'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame'
 import { useAuth } from '@/contexts/AuthContext'
@@ -48,6 +49,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [exchangeOpen, setExchangeOpen] = useState(false)
+  const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
 
   const opponentId =
     game && user ? (game.player1_id === user.id ? game.player2_id : game.player1_id) : undefined
@@ -107,6 +109,18 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
 
   return (
     <div className="min-h-screen bg-background">
+      <BlankTileDialog
+        open={!!blankTile}
+        onOpenChange={(open) => {
+          if (!open) setBlankTile(null)
+        }}
+        onSelect={(letter) => {
+          if (blankTile) {
+            placeTile(blankTile.row, blankTile.col, { ...blankTile.tile, letter })
+            setBlankTile(null)
+          }
+        }}
+      />
       <div className="container mx-auto p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -135,7 +149,16 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                   onUseSelectedTile={clearSelectedTile}
                   boardMap={gameState.board}
                   pendingTiles={pendingTiles}
-                  onPlaceTile={(row, col, tile) => placeTile(row, col, tile as any)}
+                  onPlaceTile={(row, col, tile) => {
+                    const gameTile = 'value' in tile && !('points' in tile)
+                      ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
+                      : tile as any
+                    if (gameTile.isBlank && gameTile.letter === '') {
+                      setBlankTile({ row, col, tile: gameTile })
+                    } else {
+                      placeTile(row, col, gameTile)
+                    }
+                  }}
                   onPickupTile={pickupTile}
                 />
                 <div className="flex justify-end mt-4">
