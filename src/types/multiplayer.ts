@@ -40,7 +40,7 @@ export interface MoveRecord {
   id: string
   game_id: string
   player_id: string
-  move_type: 'place_tiles' | 'exchange_tiles' | 'pass'
+  move_type: 'place_tiles' | 'exchange_tiles' | 'pass' | 'resign'
   tiles_placed: PlacedTile[]
   tiles_exchanged: Tile[]
   words_formed: string[]

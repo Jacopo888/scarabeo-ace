@@ -569,6 +569,69 @@ export const useMultiplayerGame = (gameId: string) => {
     }
   }
 
+  const surrenderGame = async () => {
+    if (!game || !user) return
+
+    try {
+      setLoading(true)
+
+      const opponentId = game.player1_id === user.id ? game.player2_id : game.player1_id
+
+      const gameUpdate: Partial<GameRecord> = {
+        status: 'completed',
+        winner_id: opponentId,
+        updated_at: new Date().toISOString()
+      }
+
+      await supabase
+        .from('games')
+        .update(gameUpdate as any)
+        .eq('id', game.id)
+
+      await supabase
+        .from('moves')
+        .insert({
+          game_id: game.id,
+          player_id: user.id,
+          move_type: 'resign',
+          score_earned: 0,
+          board_state_after: game.board_state as any,
+          rack_after: (game.player1_id === user.id ? game.player1_rack : game.player2_rack) as any
+        })
+
+      const mode =
+        game.turn_duration === '1h' ? 'blitz'
+        : game.turn_duration === '6h' ? 'rapid'
+        : 'async'
+      if (API_BASE) {
+        fetch(`${API_BASE}/rating/report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player1Id: Number(game.player1_id),
+            player2Id: Number(game.player2_id),
+            winnerId: Number(opponentId),
+            mode
+          })
+        }).catch(err => console.error('rating report error', err))
+      }
+
+      toast({
+        title: 'Hai abbandonato',
+        description: 'L\'avversario vince la partita'
+      })
+    } catch (error) {
+      console.error('Error surrendering game:', error)
+      toast({
+        title: 'Error',
+        description: 'Unable to surrender the game',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getOpponentInfo = () => {
     if (!game || !user) return null
 
@@ -619,6 +682,7 @@ export const useMultiplayerGame = (gameId: string) => {
     submitMove,
     exchangeTiles,
     passTurn,
+    surrenderGame,
     getOpponentInfo,
     getMyScore,
     getCurrentRack

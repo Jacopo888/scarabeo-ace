@@ -41,6 +41,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
     submitMove,
     exchangeTiles,
     passTurn,
+    surrenderGame,
     getOpponentInfo,
     getMyScore,
     getCurrentRack
@@ -312,13 +313,22 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                     Back to Dashboard
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => window.location.reload()}
                 >
                   Refresh Game
                 </Button>
+                {game.status === 'active' && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={surrenderGame}
+                  >
+                    Surrender
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
