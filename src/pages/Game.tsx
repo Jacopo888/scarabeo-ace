@@ -174,6 +174,15 @@ const GameContent = () => {
                 disabled={isBotTurn || currentPlayer.isBot}
                 selectedTile={selectedTile}
                 onUseSelectedTile={clearSelectedTile}
+                boardMap={gameState.board}
+                pendingTiles={pendingTiles}
+                onPlaceTile={(row, col, tile) => {
+                  const gameTile = 'value' in tile && !('points' in tile)
+                    ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
+                    : tile as any
+                  placeTile(row, col, gameTile)
+                }}
+                onPickupTile={pickupTile}
               />
               <div className="absolute bottom-2 right-2 bg-secondary rounded p-2 text-sm shadow">
                 {gameState.players.map(p => (
