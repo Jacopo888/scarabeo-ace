@@ -151,3 +151,23 @@ npm --prefix rating-api run makeDaily
 ```
 
 Schedule this with cron or GitHub Actions to run every day.
+
+### Daily Challenge
+
+The rating API exposes a daily Scrabble challenge.
+
+Ensure the database is configured via `DATABASE_URL` and run migrations:
+
+```
+npm --prefix rating-api run db:migrate
+```
+
+Example usage:
+
+```
+curl http://localhost:4000/daily-challenge/today
+curl -X POST http://localhost:4000/daily-challenge/submit \
+  -H "Content-Type: application/json" \
+  -d '{"yyyymmdd":20250101,"userId":"test","score":123}'
+curl http://localhost:4000/daily-challenge/leaderboard?yyyymmdd=20250101&limit=10
+```

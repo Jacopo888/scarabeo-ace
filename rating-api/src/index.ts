@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import { db, redis } from './db';
-import { players, games, puzzlePuzzles, puzzleScores, dailyPuzzles, dailyScores } from './schema';
+import { players, games, puzzlePuzzles, puzzleScores } from './schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { calculateElo, Mode } from './elo';
 import { generatePuzzle } from './puzzle/puzzle';
 import { z } from 'zod';
 import analysisRouter from './routes/analysis';
+import dailyRouter from './routes/daily';
 
 export const app = express();
 const port = Number(process.env.PORT) || 4000;
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Analysis routes
 app.use('/analysis', analysisRouter);
+app.use('/daily-challenge', dailyRouter);
 
 const getUTCDateNumber = (date = new Date()) =>
   Number(date.toISOString().slice(0, 10).replace(/-/g, ''));
@@ -99,91 +101,6 @@ app.get('/puzzle/leaderboard', async (req, res) => {
   }
 });
 
-app.get('/daily', async (_req, res) => {
-  try {
-    const today = getUTCDateNumber();
-    let [puzzle] = await db
-      .select()
-      .from(dailyPuzzles)
-      .where(eq(dailyPuzzles.yyyymmdd, today));
-    if (!puzzle) {
-      const generated = generatePuzzle();
-      const bestScore = generated.topMoves[0]?.score ?? 0;
-      await db
-        .insert(dailyPuzzles)
-        .values({ yyyymmdd: today, board: generated.board, rack: generated.rack, bestScore })
-        .onConflictDoNothing();
-      puzzle = { yyyymmdd: today, board: generated.board, rack: generated.rack, bestScore } as any;
-    }
-    res.json({
-      yyyymmdd: puzzle.yyyymmdd,
-      board: puzzle.board,
-      rack: puzzle.rack,
-      bestScoreToBeat: puzzle.bestScore,
-    });
-  } catch (error) {
-    console.error('Error fetching daily puzzle:', error);
-    res.status(500).json({ error: 'Failed to fetch puzzle' });
-  }
-});
-
-const dailyScoreSchema = z.object({
-  userId: z.string(),
-  score: z.number().int().min(0),
-});
-
-app.post('/daily/score', async (req, res) => {
-  try {
-    const parsed = dailyScoreSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'Invalid request body' });
-    }
-    const { userId, score } = parsed.data;
-    const today = getUTCDateNumber();
-    const existing = await db
-      .select()
-      .from(dailyScores)
-      .where(and(eq(dailyScores.userId, userId), eq(dailyScores.yyyymmdd, today)));
-    if (existing[0]) {
-      if (score > existing[0].score) {
-        await db.update(dailyScores).set({ score }).where(eq(dailyScores.id, existing[0].id));
-      }
-    } else {
-      await db.insert(dailyScores).values({ userId, yyyymmdd: today, score });
-    }
-    await redis.del(`daily:lb:${today}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error recording daily score:', error);
-    res.status(500).json({ error: 'Failed to record score' });
-  }
-});
-
-app.get('/daily/leaderboard', async (req, res) => {
-  try {
-    const day = Number(req.query.yyyymmdd);
-    if (!day) {
-      return res.status(400).json({ error: 'Invalid yyyymmdd' });
-    }
-    const limit = Number(req.query.limit) || 100;
-    const cacheKey = `daily:lb:${day}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return res.json(JSON.parse(cached));
-    }
-    const board = await db
-      .select({ userId: dailyScores.userId, score: dailyScores.score })
-      .from(dailyScores)
-      .where(eq(dailyScores.yyyymmdd, day))
-      .orderBy(desc(dailyScores.score))
-      .limit(limit);
-    await redis.set(cacheKey, JSON.stringify(board), { EX: 300 });
-    res.json(board);
-  } catch (error) {
-    console.error('Error fetching daily leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
-  }
-});
 
 app.get('/ping', (_req, res) => {
   res.json({ status: 'ok' });

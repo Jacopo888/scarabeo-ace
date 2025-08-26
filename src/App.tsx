@@ -16,6 +16,7 @@ import Lobby from "./pages/Lobby";
 import PuzzleGame from "./pages/PuzzleGame";
 import NotFound from "./pages/NotFound";
 import Daily from "./pages/Daily";
+import DailyChallengePage from "./pages/DailyChallenge";
 import { BotProvider } from "./contexts/BotContext";
 import { DictionaryProvider } from "./contexts/DictionaryContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -50,6 +51,7 @@ const AppRoutes = () => {
             </ErrorBoundary>
           } />
           <Route path="/daily" element={<Daily />} />
+          <Route path="/daily-challenge" element={<DailyChallengePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
