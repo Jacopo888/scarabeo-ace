@@ -54,7 +54,7 @@ export const calculateWordScore = (
   // Calculate base score with letter multipliers
   word.tiles.forEach(tile => {
     const position = `${tile.row},${tile.col}`
-    let letterScore = tile.points
+    let letterScore = Number(tile.points) || 0
     
     // Apply special square bonuses only for newly placed tiles
     if (newTilePositions.has(position)) {
