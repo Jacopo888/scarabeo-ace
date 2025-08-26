@@ -22,7 +22,7 @@ export const GameFlow = () => {
     const newCount = passCount + 1
     setPassCount(newCount)
 
-    // Game ends automatically after four consecutive passes
+    // Game ends automatically after six consecutive passes
     passTurn()
     setTurnNumber(prev => prev + 1)
   }, [passCount, passTurn])
@@ -138,7 +138,7 @@ export const GameFlow = () => {
         </div>
 
         {/* End Game Conditions */}
-        {(gameState.tileBag.length === 0 || passCount >= 3) && (
+        {(gameState.tileBag.length === 0 || passCount >= 5) && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm font-medium text-yellow-800">
               {gameState.tileBag.length === 0
