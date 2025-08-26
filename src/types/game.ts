@@ -25,7 +25,7 @@ export interface GameState {
   gameStatus: 'waiting' | 'playing' | 'finished'
   lastMove?: PlacedTile[]
   gameMode?: 'human' | 'bot'
-  passCount?: number
+  passCounts?: number[]
 }
 
 // Standard Scrabble tile distribution

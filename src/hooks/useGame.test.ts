@@ -19,10 +19,12 @@ import { useGame } from './useGame'
 // Simple wrapper to use the hook
 
 describe('useGame pass counter', () => {
-  it('ends the game after four consecutive passes', () => {
+  it('ends the game after six consecutive passes', () => {
     const { result } = renderHook(() => useGame())
 
     act(() => {
+      result.current.passTurn()
+      result.current.passTurn()
       result.current.passTurn()
       result.current.passTurn()
       result.current.passTurn()

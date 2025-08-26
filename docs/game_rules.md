@@ -1,10 +1,14 @@
 # Multiplayer Game End Rules
 
-A multiplayer game ends when `canEndGame` returns `true`. The helper checks if the tile bag is empty and one of the players has no tiles left. When this happens, each player's final score is reduced by the sum of the points from the tiles remaining in their rack. The player with the higher score after these deductions is stored as the `winner_id`.
+A multiplayer game ends when `canEndGame` returns `true`. The helper evaluates three conditions:
 
-When the game is marked as `completed` the application:
+1. **Rack depletion** – the tile bag is empty and a player has no tiles left.
+2. **Consecutive passes** – all players have passed three turns in a row (six total passes in a two-player game).
+3. **No moves available** – the current board and racks offer no valid plays.
 
-1. Calls `canEndGame` with both player racks and the current tile bag.
+When any of these situations occur, the application:
+
+1. Calls `canEndGame` with both player racks, the current tile bag and the current pass counter.
 2. If the game can finish, `calculateEndGamePenalty` is run for each rack.
-3. The penalty values are subtracted from `player1_score` and `player2_score`.
+3. Penalties are subtracted from each player's score and the opponent's leftover points are added to the winner.
 4. The updated scores and winner are saved to the `games` table before the final move is recorded.

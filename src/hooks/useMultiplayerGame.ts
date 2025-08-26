@@ -293,7 +293,8 @@ export const useMultiplayerGame = (gameId: string) => {
           { rack: player1RackAfter as PlacedTile[] },
           { rack: player2RackAfter as PlacedTile[] }
         ],
-        remaining as PlacedTile[]
+        remaining as PlacedTile[],
+        0
       )
 
       if (endGame) {
@@ -301,6 +302,11 @@ export const useMultiplayerGame = (gameId: string) => {
         const p2Penalty = calculateEndGamePenalty(player2RackAfter as PlacedTile[])
         player1ScoreAfter -= p1Penalty
         player2ScoreAfter -= p2Penalty
+        if (player1ScoreAfter > player2ScoreAfter) {
+          player1ScoreAfter += p2Penalty
+        } else if (player2ScoreAfter > player1ScoreAfter) {
+          player2ScoreAfter += p1Penalty
+        }
         gameUpdate.status = 'completed'
         gameUpdate.winner_id =
           player1ScoreAfter > player2ScoreAfter
@@ -478,15 +484,37 @@ export const useMultiplayerGame = (gameId: string) => {
         updated_at: new Date().toISOString()
       }
 
-      if (newPassCount >= 4) {
-        gameUpdate.status = 'completed'
-        if (game.player1_score > game.player2_score) {
-          gameUpdate.winner_id = game.player1_id
-        } else if (game.player2_score > game.player1_score) {
-          gameUpdate.winner_id = game.player2_id
-        } else {
-          gameUpdate.winner_id = null
+      let player1ScoreAfter = game.player1_score
+      let player2ScoreAfter = game.player2_score
+
+      const endGame = canEndGame(
+        [
+          { rack: game.player1_rack as PlacedTile[] },
+          { rack: game.player2_rack as PlacedTile[] }
+        ],
+        game.tile_bag as PlacedTile[],
+        newPassCount
+      )
+
+      if (endGame) {
+        const p1Penalty = calculateEndGamePenalty(game.player1_rack as PlacedTile[])
+        const p2Penalty = calculateEndGamePenalty(game.player2_rack as PlacedTile[])
+        player1ScoreAfter -= p1Penalty
+        player2ScoreAfter -= p2Penalty
+        if (player1ScoreAfter > player2ScoreAfter) {
+          player1ScoreAfter += p2Penalty
+        } else if (player2ScoreAfter > player1ScoreAfter) {
+          player2ScoreAfter += p1Penalty
         }
+        gameUpdate.status = 'completed'
+        gameUpdate.winner_id =
+          player1ScoreAfter > player2ScoreAfter
+            ? game.player1_id
+            : player2ScoreAfter > player1ScoreAfter
+              ? game.player2_id
+              : null
+        gameUpdate.player1_score = player1ScoreAfter
+        gameUpdate.player2_score = player2ScoreAfter
       }
 
       await supabase

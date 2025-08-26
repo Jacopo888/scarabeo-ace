@@ -3,6 +3,7 @@ import { GameState, Player, Tile, PlacedTile, TILE_DISTRIBUTION } from '@/types/
 import { validateMoveLogic } from '@/utils/moveValidation'
 import { findNewWordsFormed } from '@/utils/newWordFinder'
 import { calculateNewMoveScore } from '@/utils/newScoring'
+import { canEndGame, calculateEndGamePenalty } from '@/utils/gameRules'
 import { useToast } from '@/hooks/use-toast'
 import { useBotContext } from '@/contexts/BotContext'
 import { useDictionary } from '@/contexts/DictionaryContext'
@@ -58,7 +59,7 @@ export const useGame = () => {
       tileBag: player2Tiles.remaining,
       gameStatus: 'playing',
       gameMode,
-      passCount: 0
+      passCounts: [0, 0]
     }
   })
 
@@ -196,14 +197,44 @@ export const useGame = () => {
         description: `+${score} points for words: ${newWords.map(w => w.word).join(', ')}`,
       })
       
+      const newPassCounts = [...(prev.passCounts || Array(prev.players.length).fill(0))]
+      newPassCounts[prev.currentPlayerIndex] = 0
+      const nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length
+      const endGame = canEndGame(
+        newPlayers.map(p => ({ rack: p.rack })),
+        remaining as PlacedTile[]
+      )
+
+      if (endGame) {
+        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
+        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+        let p1Score = newPlayers[0].score - p1Penalty
+        let p2Score = newPlayers[1].score - p2Penalty
+        if (p1Score > p2Score) p1Score += p2Penalty
+        else if (p2Score > p1Score) p2Score += p1Penalty
+        const finalPlayers: Player[] = [
+          { ...newPlayers[0], score: p1Score },
+          { ...newPlayers[1], score: p2Score }
+        ]
+        return {
+          ...prev,
+          board: newBoard,
+          players: finalPlayers,
+          tileBag: remaining,
+          gameStatus: 'finished',
+          passCounts: newPassCounts,
+          lastMove: pendingTiles
+        }
+      }
+
       // Automatically end turn after successful move
       return {
         ...prev,
         board: newBoard,
         players: newPlayers,
         tileBag: remaining,
-        currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-        passCount: 0, // Reset pass count after a successful move
+        currentPlayerIndex: nextPlayerIndex,
+        passCounts: newPassCounts,
         lastMove: pendingTiles
       }
     })
@@ -266,12 +297,14 @@ export const useGame = () => {
         rack: drawn
       }
 
+      const newPassCounts = [...(prev.passCounts || Array(prev.players.length).fill(0))]
+      newPassCounts[prev.currentPlayerIndex] = 0
       return {
         ...prev,
         players: newPlayers,
         tileBag: remaining,
         currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-        passCount: 0
+        passCounts: newPassCounts
       }
     })
   }, [cancelMove])
@@ -280,21 +313,38 @@ export const useGame = () => {
   const passTurn = useCallback(() => {
     cancelMove()
     setGameState(prev => {
-      const newPassCount = (prev.passCount || 0) + 1
-      
-      // End game if all players pass twice each (4 passes total)
-      if (newPassCount >= 4) {
+      const newPassCounts = [...(prev.passCounts || Array(prev.players.length).fill(0))]
+      newPassCounts[prev.currentPlayerIndex] += 1
+      const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
+      const endGame = canEndGame(
+        prev.players.map(p => ({ rack: p.rack })),
+        prev.tileBag as PlacedTile[],
+        totalPasses
+      )
+
+      if (endGame) {
+        const p1Penalty = calculateEndGamePenalty(prev.players[0].rack as PlacedTile[])
+        const p2Penalty = calculateEndGamePenalty(prev.players[1].rack as PlacedTile[])
+        let p1Score = prev.players[0].score - p1Penalty
+        let p2Score = prev.players[1].score - p2Penalty
+        if (p1Score > p2Score) p1Score += p2Penalty
+        else if (p2Score > p1Score) p2Score += p1Penalty
+        const finalPlayers: Player[] = [
+          { ...prev.players[0], score: p1Score },
+          { ...prev.players[1], score: p2Score }
+        ]
         return {
           ...prev,
+          players: finalPlayers,
           gameStatus: 'finished',
-          passCount: newPassCount
+          passCounts: newPassCounts
         }
       }
-      
+
       return {
         ...prev,
         currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-        passCount: newPassCount
+        passCounts: newPassCounts
       }
     })
   }, [cancelMove])
@@ -304,28 +354,50 @@ export const useGame = () => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const tilesNeeded = 7 - currentPlayer.rack.length
       
-      if (tilesNeeded > 0 && prev.tileBag.length > 0) {
-        const { drawn, remaining } = drawTiles(prev.tileBag, Math.min(tilesNeeded, prev.tileBag.length))
-        
-        const newPlayers = [...prev.players]
-        newPlayers[prev.currentPlayerIndex] = {
-          ...currentPlayer,
-          rack: [...currentPlayer.rack, ...drawn]
-        }
-        
+      const { drawn, remaining } =
+        tilesNeeded > 0 && prev.tileBag.length > 0
+          ? drawTiles(prev.tileBag, Math.min(tilesNeeded, prev.tileBag.length))
+          : { drawn: [], remaining: prev.tileBag }
+
+      const newPlayers = [...prev.players]
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        rack: [...currentPlayer.rack, ...drawn]
+      }
+
+      const newPassCounts = [...(prev.passCounts || Array(prev.players.length).fill(0))]
+      newPassCounts[prev.currentPlayerIndex] = 0
+      const endGame = canEndGame(
+        newPlayers.map(p => ({ rack: p.rack })),
+        remaining as PlacedTile[]
+      )
+
+      if (endGame) {
+        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
+        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+        let p1Score = newPlayers[0].score - p1Penalty
+        let p2Score = newPlayers[1].score - p2Penalty
+        if (p1Score > p2Score) p1Score += p2Penalty
+        else if (p2Score > p1Score) p2Score += p1Penalty
+        const finalPlayers: Player[] = [
+          { ...newPlayers[0], score: p1Score },
+          { ...newPlayers[1], score: p2Score }
+        ]
         return {
           ...prev,
-          players: newPlayers,
+          players: finalPlayers,
           tileBag: remaining,
-          currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-          passCount: 0 // Reset pass count when a player makes a move
+          gameStatus: 'finished',
+          passCounts: newPassCounts
         }
       }
-      
+
       return {
         ...prev,
+        players: newPlayers,
+        tileBag: remaining,
         currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-        passCount: 0
+        passCounts: newPassCounts
       }
     })
   }, [])
@@ -360,7 +432,7 @@ export const useGame = () => {
       tileBag: player2Tiles.remaining,
       gameStatus: 'playing',
       gameMode,
-      passCount: 0
+      passCounts: [0, 0]
     })
     setPendingTiles([])
   }, [difficulty])
@@ -380,11 +452,39 @@ export const useGame = () => {
         if (!bestMove || bestMove.tiles.length === 0) {
           // Bot passes if no valid moves
           setIsBotTurn(false)
-          setGameState(prevState => ({
-            ...prevState,
-            currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
-            passCount: (prevState.passCount || 0) + 1
-          }))
+          setGameState(prevState => {
+            const newPassCounts = [...(prevState.passCounts || Array(prevState.players.length).fill(0))]
+            newPassCounts[prevState.currentPlayerIndex] += 1
+            const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
+            const endGame = canEndGame(
+              prevState.players.map(p => ({ rack: p.rack })),
+              prevState.tileBag as PlacedTile[],
+              totalPasses
+            )
+            if (endGame) {
+              const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack as PlacedTile[])
+              const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack as PlacedTile[])
+              let p1Score = prevState.players[0].score - p1Penalty
+              let p2Score = prevState.players[1].score - p2Penalty
+              if (p1Score > p2Score) p1Score += p2Penalty
+              else if (p2Score > p1Score) p2Score += p1Penalty
+              const finalPlayers: Player[] = [
+                { ...prevState.players[0], score: p1Score },
+                { ...prevState.players[1], score: p2Score }
+              ]
+              return {
+                ...prevState,
+                players: finalPlayers,
+                gameStatus: 'finished',
+                passCounts: newPassCounts
+              }
+            }
+            return {
+              ...prevState,
+              currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
+              passCounts: newPassCounts
+            }
+          })
           return
         }
         
@@ -429,13 +529,40 @@ export const useGame = () => {
           
           setIsBotTurn(false)
           
+          const newPassCounts = [...(prevState.passCounts || Array(prevState.players.length).fill(0))]
+          newPassCounts[prevState.currentPlayerIndex] = 0
+          const endGame = canEndGame(
+            newPlayers.map(p => ({ rack: p.rack })),
+            remaining as PlacedTile[]
+          )
+          if (endGame) {
+            const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
+            const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+            let p1Score = newPlayers[0].score - p1Penalty
+            let p2Score = newPlayers[1].score - p2Penalty
+            if (p1Score > p2Score) p1Score += p2Penalty
+            else if (p2Score > p1Score) p2Score += p1Penalty
+            const finalPlayers: Player[] = [
+              { ...newPlayers[0], score: p1Score },
+              { ...newPlayers[1], score: p2Score }
+            ]
+            return {
+              ...prevState,
+              board: newBoard,
+              players: finalPlayers,
+              tileBag: remaining,
+              gameStatus: 'finished',
+              passCounts: newPassCounts,
+              lastMove: bestMove.tiles
+            }
+          }
           return {
             ...prevState,
             board: newBoard,
             players: newPlayers,
             tileBag: remaining,
             currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
-            passCount: 0,
+            passCounts: newPassCounts,
             lastMove: bestMove.tiles
           }
         })
@@ -443,11 +570,39 @@ export const useGame = () => {
         console.error('Bot move error:', error)
         setIsBotTurn(false)
         // Bot passes on error
-        setGameState(prevState => ({
-          ...prevState,
-          currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
-          passCount: (prevState.passCount || 0) + 1
-        }))
+        setGameState(prevState => {
+          const newPassCounts = [...(prevState.passCounts || Array(prevState.players.length).fill(0))]
+          newPassCounts[prevState.currentPlayerIndex] += 1
+          const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
+          const endGame = canEndGame(
+            prevState.players.map(p => ({ rack: p.rack })),
+            prevState.tileBag as PlacedTile[],
+            totalPasses
+          )
+          if (endGame) {
+            const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack as PlacedTile[])
+            const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack as PlacedTile[])
+            let p1Score = prevState.players[0].score - p1Penalty
+            let p2Score = prevState.players[1].score - p2Penalty
+            if (p1Score > p2Score) p1Score += p2Penalty
+            else if (p2Score > p1Score) p2Score += p1Penalty
+            const finalPlayers: Player[] = [
+              { ...prevState.players[0], score: p1Score },
+              { ...prevState.players[1], score: p2Score }
+            ]
+            return {
+              ...prevState,
+              players: finalPlayers,
+              gameStatus: 'finished',
+              passCounts: newPassCounts
+            }
+          }
+          return {
+            ...prevState,
+            currentPlayerIndex: (prevState.currentPlayerIndex + 1) % prevState.players.length,
+            passCounts: newPassCounts
+          }
+        })
       })
       
       return prev // Return current state while bot is thinking

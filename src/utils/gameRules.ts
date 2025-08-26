@@ -120,14 +120,18 @@ const coversCenter = (tiles: PlacedTile[]): boolean => {
 
 export const canEndGame = (
   players: Array<{ rack: PlacedTile[] }>,
-  tileBag: PlacedTile[]
+  tileBag: PlacedTile[],
+  passCount = 0,
+  noMovesAvailable = false
 ): boolean => {
   // Game ends when:
   // 1. A player uses all their tiles and the bag is empty
-  // 2. All players pass twice each (4 passes total)
+  if (tileBag.length === 0 && players.some(player => player.rack.length === 0)) return true
+  // 2. All players pass three times each
+  if (passCount >= players.length * 3) return true
   // 3. No more valid moves possible
-  
-  return tileBag.length === 0 && players.some(player => player.rack.length === 0)
+  if (noMovesAvailable) return true
+  return false
 }
 
 export const calculateEndGamePenalty = (rack: PlacedTile[]): number => {
