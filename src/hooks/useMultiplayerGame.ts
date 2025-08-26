@@ -66,8 +66,8 @@ export const useMultiplayerGame = (gameId: string) => {
           // Notify when it's the player's turn
           if (updatedGame.current_player_id === user.id && updatedGame.current_player_id !== game?.current_player_id) {
             toast({
-              title: "È il tuo turno!",
-              description: "Puoi ora fare la tua mossa"
+              title: "It's your turn!",
+              description: "You can make your move now"
             })
           }
         }
@@ -149,13 +149,13 @@ export const useMultiplayerGame = (gameId: string) => {
       players: [
         {
           id: gameData.player1_id,
-          name: 'Giocatore 1',
+          name: 'Player 1',
           score: gameData.player1_score,
           rack: normalizeRack(gameData.player1_rack || []),
         },
         {
           id: gameData.player2_id,
-          name: 'Giocatore 2',
+          name: 'Player 2',
           score: gameData.player2_score,
           rack: normalizeRack(gameData.player2_rack || []),
         },
@@ -617,8 +617,8 @@ export const useMultiplayerGame = (gameId: string) => {
       }
 
       toast({
-        title: 'Hai abbandonato',
-        description: 'L\'avversario vince la partita'
+        title: 'You surrendered',
+        description: 'The opponent wins the game'
       })
     } catch (error) {
       console.error('Error surrendering game:', error)
@@ -640,7 +640,7 @@ export const useMultiplayerGame = (gameId: string) => {
 
     return {
       id: isPlayer1 ? game.player2_id : game.player1_id,
-      name: opponent?.display_name || opponent?.username || 'Avversario',
+      name: opponent?.display_name || opponent?.username || 'Opponent',
       score: isPlayer1 ? game.player2_score : game.player1_score
     }
   }

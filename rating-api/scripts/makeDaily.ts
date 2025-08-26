@@ -1,6 +1,6 @@
 import { db } from '../src/db';
 import { dailyPuzzles } from '../src/schema';
-import { generateRushPuzzle } from '../src/rush/puzzle';
+import { generatePuzzle } from '../src/puzzle/puzzle';
 
 const getUTCDateNumber = (date: Date) =>
   Number(date.toISOString().slice(0, 10).replace(/-/g, ''));
@@ -9,7 +9,7 @@ async function main() {
   const now = new Date();
   const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
   const day = getUTCDateNumber(tomorrow);
-  const puzzle = generateRushPuzzle();
+  const puzzle = generatePuzzle();
   const bestScore = puzzle.topMoves[0]?.score ?? 0;
   await db
     .insert(dailyPuzzles)

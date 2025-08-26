@@ -1,20 +1,20 @@
 // Determine API base URL - prefer VITE_RATING_API_URL, fallback to proxy in dev
 const API_BASE = import.meta.env.VITE_RATING_API_URL || (import.meta.env.MODE === 'development' ? '/api' : '')
 
-export interface RushPuzzleResponse {
+export interface PuzzleResponse {
   puzzleId: string
   board: any[]
   rack: any[]
   bestScore: number
 }
 
-export interface RushScoreRequest {
+export interface PuzzleScoreRequest {
   puzzleId: string
   userId: string
   score: number
 }
 
-export interface RushLeaderboardEntry {
+export interface PuzzleLeaderboardEntry {
   id: string
   user_id: string
   puzzle_id: string
@@ -57,25 +57,25 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   }
 }
 
-export async function fetchRushPuzzle(): Promise<RushPuzzleResponse> {
+export async function fetchPuzzle(): Promise<PuzzleResponse> {
   // If no API base URL, fail fast to trigger local fallback
   if (!API_BASE) {
     throw new Error('Rating API not configured - using local fallback')
   }
   
-  const response = await fetchWithTimeout(`${API_BASE}/rush/new`)
+  const response = await fetchWithTimeout(`${API_BASE}/puzzle/new`)
   if (!response.ok) {
     throw new Error(`Failed to fetch puzzle: ${response.status} ${response.statusText}`)
   }
-  return safeJsonParse<RushPuzzleResponse>(response)
+  return safeJsonParse<PuzzleResponse>(response)
 }
 
-export async function submitRushScore(data: RushScoreRequest): Promise<void> {
+export async function submitPuzzleScore(data: PuzzleScoreRequest): Promise<void> {
   if (!API_BASE) {
     throw new Error('Rating API not configured - scores cannot be saved')
   }
   
-  const response = await fetchWithTimeout(`${API_BASE}/rush/score`, {
+  const response = await fetchWithTimeout(`${API_BASE}/puzzle/score`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -89,14 +89,14 @@ export async function submitRushScore(data: RushScoreRequest): Promise<void> {
   }
 }
 
-export async function fetchRushLeaderboard(limit = 50): Promise<RushLeaderboardEntry[]> {
+export async function fetchPuzzleLeaderboard(limit = 50): Promise<PuzzleLeaderboardEntry[]> {
   if (!API_BASE) {
     throw new Error('Rating API not configured - leaderboard unavailable')
   }
   
-  const response = await fetchWithTimeout(`${API_BASE}/rush/leaderboard?limit=${limit}`)
+  const response = await fetchWithTimeout(`${API_BASE}/puzzle/leaderboard?limit=${limit}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch leaderboard: ${response.status} ${response.statusText}`)
   }
-  return safeJsonParse<RushLeaderboardEntry[]>(response)
+  return safeJsonParse<PuzzleLeaderboardEntry[]>(response)
 }

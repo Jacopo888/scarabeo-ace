@@ -13,7 +13,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Dictionary from "./pages/Dictionary";
 import Lobby from "./pages/Lobby";
-import RushGame from "./pages/RushGame";
+import PuzzleGame from "./pages/PuzzleGame";
 import NotFound from "./pages/NotFound";
 import Daily from "./pages/Daily";
 import { BotProvider } from "./contexts/BotContext";
@@ -44,9 +44,9 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dictionary" element={<Dictionary />} />
           <Route path="/lobby" element={<Lobby />} />
-          <Route path="/rush" element={
+          <Route path="/puzzle" element={
             <ErrorBoundary>
-              <RushGame />
+              <PuzzleGame />
             </ErrorBoundary>
           } />
           <Route path="/daily" element={<Daily />} />

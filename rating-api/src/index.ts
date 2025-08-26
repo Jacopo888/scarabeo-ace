@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import { db, redis } from './db';
-import { players, games, rushPuzzles, rushScores, dailyPuzzles, dailyScores } from './schema';
+import { players, games, puzzlePuzzles, puzzleScores, dailyPuzzles, dailyScores } from './schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { calculateElo, Mode } from './elo';
-import { generateRushPuzzle } from './rush/puzzle';
+import { generatePuzzle } from './puzzle/puzzle';
 import { z } from 'zod';
 import analysisRouter from './routes/analysis';
 
@@ -19,13 +19,13 @@ app.use('/analysis', analysisRouter);
 const getUTCDateNumber = (date = new Date()) =>
   Number(date.toISOString().slice(0, 10).replace(/-/g, ''));
 
-// Rush game endpoints
-app.get('/rush/new', async (_req, res) => {
+// Puzzle game endpoints
+app.get('/puzzle/new', async (_req, res) => {
   try {
-    const puzzle = generateRushPuzzle();
+    const puzzle = generatePuzzle();
     const bestScore = puzzle.topMoves[0]?.score ?? 0;
     await db
-      .insert(rushPuzzles)
+      .insert(puzzlePuzzles)
       .values({
         id: puzzle.id,
         board: puzzle.board,
@@ -46,7 +46,7 @@ const scoreSchema = z.object({
   score: z.number().int().min(0),
 });
 
-app.post('/rush/score', async (req, res) => {
+app.post('/puzzle/score', async (req, res) => {
   try {
     const parsed = scoreSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -55,16 +55,16 @@ app.post('/rush/score', async (req, res) => {
     const { userId, puzzleId, score } = parsed.data;
     const existing = await db
       .select()
-      .from(rushScores)
-      .where(and(eq(rushScores.userId, userId), eq(rushScores.puzzleId, puzzleId)));
+      .from(puzzleScores)
+      .where(and(eq(puzzleScores.userId, userId), eq(puzzleScores.puzzleId, puzzleId)));
     if (existing[0]) {
       if (score > existing[0].score) {
-        await db.update(rushScores).set({ score }).where(eq(rushScores.id, existing[0].id));
+        await db.update(puzzleScores).set({ score }).where(eq(puzzleScores.id, existing[0].id));
       }
     } else {
-      await db.insert(rushScores).values({ userId, puzzleId, score });
+      await db.insert(puzzleScores).values({ userId, puzzleId, score });
     }
-    await redis.del('rush:leaderboard');
+    await redis.del('puzzle:leaderboard');
     res.json({ success: true });
   } catch (error) {
     console.error('Error recording score:', error);
@@ -72,24 +72,24 @@ app.post('/rush/score', async (req, res) => {
   }
 });
 
-app.get('/rush/leaderboard', async (req, res) => {
+app.get('/puzzle/leaderboard', async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 50;
-    const cacheKey = 'rush:leaderboard';
+    const cacheKey = 'puzzle:leaderboard';
     const cached = await redis.get(cacheKey);
     if (cached) {
       return res.json(JSON.parse(cached));
     }
     const board = await db
       .select({
-        id: rushScores.id,
-        user_id: rushScores.userId,
-        puzzle_id: rushScores.puzzleId,
-        score: rushScores.score,
-        created_at: rushScores.createdAt,
+        id: puzzleScores.id,
+        user_id: puzzleScores.userId,
+        puzzle_id: puzzleScores.puzzleId,
+        score: puzzleScores.score,
+        created_at: puzzleScores.createdAt,
       })
-      .from(rushScores)
-      .orderBy(desc(rushScores.score))
+      .from(puzzleScores)
+      .orderBy(desc(puzzleScores.score))
       .limit(limit);
     await redis.set(cacheKey, JSON.stringify(board), { EX: 60 });
     res.json(board);
@@ -107,7 +107,7 @@ app.get('/daily', async (_req, res) => {
       .from(dailyPuzzles)
       .where(eq(dailyPuzzles.yyyymmdd, today));
     if (!puzzle) {
-      const generated = generateRushPuzzle();
+      const generated = generatePuzzle();
       const bestScore = generated.topMoves[0]?.score ?? 0;
       await db
         .insert(dailyPuzzles)

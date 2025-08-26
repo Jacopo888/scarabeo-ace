@@ -15,7 +15,7 @@ interface PlacedTile extends Tile {
   col: number
 }
 
-interface RushMove {
+interface PuzzleMove {
   tiles: PlacedTile[]
   words: string[]
   score: number
@@ -24,11 +24,11 @@ interface RushMove {
   lettersUsed?: string[]
 }
 
-interface RushPuzzle {
+interface Puzzle {
   id: string
   board: PlacedTile[]  // Only occupied cells
   rack: Tile[]
-  topMoves: RushMove[]
+  topMoves: PuzzleMove[]
 }
 
 // TWL06 basic word list for server-side validation
@@ -140,8 +140,8 @@ function generateConnectedBoard(tileBag: Tile[]): { board: Map<string, PlacedTil
   return { board, usedTiles }
 }
 
-function generateTopMoves(board: Map<string, PlacedTile>, rack: Tile[]): RushMove[] {
-  const moves: RushMove[] = []
+function generateTopMoves(board: Map<string, PlacedTile>, rack: Tile[]): PuzzleMove[] {
+  const moves: PuzzleMove[] = []
   
   // Generate all possible moves using simplified bot logic
   const adjacentPositions = findAdjacentPositions(board)
@@ -263,7 +263,7 @@ function generatePermutations(rack: Tile[], length: number): Array<{ tiles: Tile
   return results.slice(0, 50) // Limit for performance
 }
 
-export function generateRushPuzzle(): RushPuzzle {
+export function generatePuzzle(): Puzzle {
   const id = randomUUID()
   let attempts = 0
   const maxAttempts = 10
