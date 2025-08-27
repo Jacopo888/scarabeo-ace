@@ -8,13 +8,14 @@ import { TileRack } from '@/components/TileRack'
 import { TileCounter } from '@/components/TileCounter'
 import { ExchangeTilesDialog } from '@/components/ExchangeTilesDialog'
 import { GameChat } from '@/components/GameChat'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BlankTileDialog } from '@/components/BlankTileDialog'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame'
 import { useAuth } from '@/contexts/AuthContext'
 import { Clock, User, Trophy, ArrowLeft } from 'lucide-react'
 import { usePlayerRating } from '@/hooks/usePlayerRating'
+import { useGameAnalysis } from "@/hooks/useGameAnalysis"
 import { formatTimeRemaining } from '@/utils/timeUtils'
 
 export default function MultiplayerGame() {
@@ -51,6 +52,7 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [exchangeOpen, setExchangeOpen] = useState(false)
   const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
+  const { moves, analysis, analyzeGame, loading: analysisLoading } = useGameAnalysis(gameId)
 
   const opponentId =
     game && user ? (game.player1_id === user.id ? game.player2_id : game.player1_id) : undefined
@@ -84,6 +86,13 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   }
 
   const clearSelectedTile = () => setSelectedTileIndex(null)
+
+  // Start analysis when game finishes
+  useEffect(() => {
+    if (game?.status === 'completed' && moves.length > 0) {
+      analyzeGame()
+    }
+  }, [game?.status, moves.length, analyzeGame])
 
   const handleExchange = (indexes: number[]) => {
     exchangeTiles(indexes)
@@ -320,6 +329,16 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 >
                   Refresh Game
                 </Button>
+                {game.status === 'completed' && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={analyzeGame}
+                    disabled={analysisLoading}
+                  >
+                    {analysisLoading ? 'Analyzing...' : 'Analyze Game'}
+                  </Button>
+                )}
                 {game.status === 'active' && (
                   <Button
                     variant="destructive"
@@ -331,6 +350,37 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
                 )}
               </CardContent>
             </Card>
+
+            {/* Analysis Results */}
+            {analysis && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Game Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Missed Opportunities</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {analysis.missed.length} missed better moves
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Bingo Chances</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {analysis.bingoChances.filter(b => b.found).length} bingos found
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Performance</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Analysis of {moves.length} moves completed
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
         

@@ -6,11 +6,12 @@ import { TileRack } from "@/components/TileRack"
 import { TileActions } from "@/components/TileActions"
 import { DictionaryLoader } from "@/components/DictionaryLoader"
 import { AnalysisPanel } from "@/components/AnalysisPanel"
+import { useGameAnalysis } from "@/hooks/useGameAnalysis"
 import { BlankTileDialog } from "@/components/BlankTileDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Trophy, BarChart3 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Link } from "react-router-dom"
 
@@ -33,6 +34,7 @@ const GameContent = () => {
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
+  const { moves, analysis, analyzeGame, loading: analysisLoading } = useGameAnalysis(null)
 
   const selectedTile = selectedTileIndex !== null 
     ? { 
@@ -48,6 +50,13 @@ const GameContent = () => {
   }
 
   const clearSelectedTile = () => setSelectedTileIndex(null)
+
+  // Start analysis when game finishes
+  useEffect(() => {
+    if (gameState.gameStatus === 'finished' && moves.length > 0) {
+      analyzeGame()
+    }
+  }, [gameState.gameStatus, moves.length, analyzeGame])
 
   // Generate mock game data for analysis (in real app, this would come from game history)
   const generateAnalysisData = () => {
@@ -149,7 +158,18 @@ const GameContent = () => {
           </TabsContent>
 
           <TabsContent value="analysis">
-            <AnalysisPanel game={generateAnalysisData()} />
+            {analysisLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Analyzing game...</p>
+              </div>
+            ) : analysis ? (
+              <AnalysisPanel analysis={analysis} moves={moves} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No analysis available for this game.</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

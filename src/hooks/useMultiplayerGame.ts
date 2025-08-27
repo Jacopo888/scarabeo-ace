@@ -189,8 +189,32 @@ export const useMultiplayerGame = (gameId: string) => {
     setPendingTiles(prev => prev.filter(t => !(t.row === row && t.col === col)))
   }, [])
 
-  const submitMove = async () => {
-    if (!game || !user || !isMyTurn || pendingTiles.length === 0) return
+  // Helper function to calculate the primary word from placed tiles
+  const calculatePrimaryWord = (tilesPlaced: any[], boardState: any) => {
+    if (tilesPlaced.length === 0) return ''
+    
+    // Sort tiles by position to determine word direction and order
+    const sortedTiles = [...tilesPlaced].sort((a, b) => {
+      if (a.row === b.row) return a.col - b.col
+      return a.row - b.row
+    })
+    
+    // Simple primary word extraction - in a real implementation this would be more sophisticated
+    return sortedTiles.map(tile => tile.letter).join('')
+  }
+
+  // Helper function to get next move index for a game
+  const getNextMoveIndex = async (gameId: string): Promise<number> => {
+    const { data } = await supabase
+      .from('moves')
+      .select('move_index')
+      .eq('game_id', gameId)
+      .order('move_index', { ascending: false })
+      .limit(1)
+    
+    return data && data.length > 0 ? data[0].move_index + 1 : 1
+  }
+    const submitMove = async () => {
 
     try {
       setLoading(true)

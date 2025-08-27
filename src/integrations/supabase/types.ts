@@ -219,12 +219,15 @@ export type Database = {
           created_at: string | null
           game_id: string
           id: string
+          move_index: number | null
           move_type: string
           player_id: string
           rack_after: Json
+          rack_before: Json | null
           score_earned: number | null
           tiles_exchanged: Json | null
           tiles_placed: Json | null
+          word: string | null
           words_formed: Json | null
         }
         Insert: {
@@ -232,12 +235,15 @@ export type Database = {
           created_at?: string | null
           game_id: string
           id?: string
+          move_index?: number | null
           move_type: string
           player_id: string
           rack_after: Json
+          rack_before?: Json | null
           score_earned?: number | null
           tiles_exchanged?: Json | null
           tiles_placed?: Json | null
+          word?: string | null
           words_formed?: Json | null
         }
         Update: {
@@ -245,12 +251,15 @@ export type Database = {
           created_at?: string | null
           game_id?: string
           id?: string
+          move_index?: number | null
           move_type?: string
           player_id?: string
           rack_after?: Json
+          rack_before?: Json | null
           score_earned?: number | null
           tiles_exchanged?: Json | null
           tiles_placed?: Json | null
+          word?: string | null
           words_formed?: Json | null
         }
         Relationships: [
