@@ -87,6 +87,12 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
 
   const clearSelectedTile = () => setSelectedTileIndex(null)
 
+  useEffect(() => {
+    if (!isMyTurn) {
+      setSelectedTileIndex(null)
+    }
+  }, [isMyTurn])
+
   // Start analysis when game finishes
   useEffect(() => {
     if (game?.status === 'completed' && moves.length > 0) {

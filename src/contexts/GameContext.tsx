@@ -13,8 +13,10 @@ interface GameContextType {
   reshuffleTiles: () => void
   exchangeTiles: () => void
   passTurn: () => void
+  surrenderGame: () => void
   makeBotMove: () => Promise<void>
   isBotTurn: boolean
+  isSurrendered: boolean
   currentPlayer: Player
   isCurrentPlayerTurn: (playerId: string) => boolean
 }
@@ -47,8 +49,10 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     reshuffleTiles,
     exchangeTiles,
     passTurn,
+    surrenderGame,
     makeBotMove,
     isBotTurn,
+    isSurrendered,
     currentPlayer,
     isCurrentPlayerTurn
   } = gameLogic
@@ -66,8 +70,10 @@ export const GameProvider = ({ children }: GameProviderProps) => {
         reshuffleTiles,
         exchangeTiles,
         passTurn,
+        surrenderGame,
         makeBotMove,
         isBotTurn,
+        isSurrendered,
         currentPlayer,
         isCurrentPlayerTurn
       }}

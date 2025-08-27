@@ -29,6 +29,7 @@ export const useGame = () => {
   const { isValidWord } = useDictionary()
   const [pendingTiles, setPendingTiles] = useState<PlacedTile[]>([])
   const [isBotTurn, setIsBotTurn] = useState(false)
+  const [isSurrendered, setIsSurrendered] = useState(false)
   const [gameState, setGameState] = useState<GameState>(() => {
     const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
     const player1Tiles = drawTiles(shuffledBag, 7)
@@ -349,6 +350,12 @@ export const useGame = () => {
     })
   }, [cancelMove])
 
+  const surrenderGame = useCallback(() => {
+    cancelMove()
+    setIsSurrendered(true)
+    setGameState(prev => ({ ...prev, gameStatus: 'finished' }))
+  }, [cancelMove])
+
   const endTurn = useCallback(() => {
     setGameState(prev => {
       const currentPlayer = prev.players[prev.currentPlayerIndex]
@@ -435,6 +442,7 @@ export const useGame = () => {
       passCounts: [0, 0]
     })
     setPendingTiles([])
+    setIsSurrendered(false)
   }, [difficulty])
 
   // Bot move logic
@@ -642,8 +650,10 @@ export const useGame = () => {
     reshuffleTiles,
     exchangeTiles,
     passTurn,
+    surrenderGame,
     makeBotMove,
     isBotTurn,
+    isSurrendered,
     currentPlayer: gameState.players[gameState.currentPlayerIndex],
     isCurrentPlayerTurn: (playerId: string) => gameState.players[gameState.currentPlayerIndex].id === playerId
   }
