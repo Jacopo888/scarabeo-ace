@@ -1,4 +1,4 @@
-import { PlacedTile } from '@/types/game'
+import { PlacedTile, Tile } from '@/types/game'
 import { findWordsOnBoard } from './wordFinder'
 
 export interface MoveValidation {
@@ -119,8 +119,8 @@ const coversCenter = (tiles: PlacedTile[]): boolean => {
 }
 
 export const canEndGame = (
-  players: Array<{ rack: PlacedTile[] }>,
-  tileBag: PlacedTile[],
+  players: Array<{ rack: Tile[] }>,
+  tileBag: Tile[],
   passCount = 0,
   noMovesAvailable = false
 ): boolean => {
@@ -134,6 +134,6 @@ export const canEndGame = (
   return false
 }
 
-export const calculateEndGamePenalty = (rack: PlacedTile[]): number => {
+export const calculateEndGamePenalty = (rack: Tile[]): number => {
   return rack.reduce((total, tile) => total + tile.points, 0)
 }

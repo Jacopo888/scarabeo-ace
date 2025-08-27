@@ -202,12 +202,12 @@ export const useGame = () => {
       const nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length
       const endGame = canEndGame(
         newPlayers.map(p => ({ rack: p.rack })),
-        remaining as PlacedTile[]
+        remaining
       )
 
       if (endGame) {
-        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
-        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack)
+        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack)
         let p1Score = newPlayers[0].score - p1Penalty
         let p2Score = newPlayers[1].score - p2Penalty
         if (p1Score > p2Score) p1Score += p2Penalty
@@ -318,13 +318,13 @@ export const useGame = () => {
       const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
       const endGame = canEndGame(
         prev.players.map(p => ({ rack: p.rack })),
-        prev.tileBag as PlacedTile[],
+        prev.tileBag,
         totalPasses
       )
 
       if (endGame) {
-        const p1Penalty = calculateEndGamePenalty(prev.players[0].rack as PlacedTile[])
-        const p2Penalty = calculateEndGamePenalty(prev.players[1].rack as PlacedTile[])
+        const p1Penalty = calculateEndGamePenalty(prev.players[0].rack)
+        const p2Penalty = calculateEndGamePenalty(prev.players[1].rack)
         let p1Score = prev.players[0].score - p1Penalty
         let p2Score = prev.players[1].score - p2Penalty
         if (p1Score > p2Score) p1Score += p2Penalty
@@ -369,12 +369,12 @@ export const useGame = () => {
       newPassCounts[prev.currentPlayerIndex] = 0
       const endGame = canEndGame(
         newPlayers.map(p => ({ rack: p.rack })),
-        remaining as PlacedTile[]
+        remaining
       )
 
       if (endGame) {
-        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
-        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+        const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack)
+        const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack)
         let p1Score = newPlayers[0].score - p1Penalty
         let p2Score = newPlayers[1].score - p2Penalty
         if (p1Score > p2Score) p1Score += p2Penalty
@@ -458,12 +458,12 @@ export const useGame = () => {
             const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
             const endGame = canEndGame(
               prevState.players.map(p => ({ rack: p.rack })),
-              prevState.tileBag as PlacedTile[],
+              prevState.tileBag,
               totalPasses
             )
             if (endGame) {
-              const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack as PlacedTile[])
-              const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack as PlacedTile[])
+              const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack)
+              const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack)
               let p1Score = prevState.players[0].score - p1Penalty
               let p2Score = prevState.players[1].score - p2Penalty
               if (p1Score > p2Score) p1Score += p2Penalty
@@ -533,11 +533,11 @@ export const useGame = () => {
           newPassCounts[prevState.currentPlayerIndex] = 0
           const endGame = canEndGame(
             newPlayers.map(p => ({ rack: p.rack })),
-            remaining as PlacedTile[]
+            remaining
           )
           if (endGame) {
-            const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack as PlacedTile[])
-            const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack as PlacedTile[])
+            const p1Penalty = calculateEndGamePenalty(newPlayers[0].rack)
+            const p2Penalty = calculateEndGamePenalty(newPlayers[1].rack)
             let p1Score = newPlayers[0].score - p1Penalty
             let p2Score = newPlayers[1].score - p2Penalty
             if (p1Score > p2Score) p1Score += p2Penalty
@@ -576,12 +576,12 @@ export const useGame = () => {
           const totalPasses = newPassCounts.reduce((sum, c) => sum + c, 0)
           const endGame = canEndGame(
             prevState.players.map(p => ({ rack: p.rack })),
-            prevState.tileBag as PlacedTile[],
+            prevState.tileBag,
             totalPasses
           )
           if (endGame) {
-            const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack as PlacedTile[])
-            const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack as PlacedTile[])
+            const p1Penalty = calculateEndGamePenalty(prevState.players[0].rack)
+            const p2Penalty = calculateEndGamePenalty(prevState.players[1].rack)
             let p1Score = prevState.players[0].score - p1Penalty
             let p2Score = prevState.players[1].score - p2Penalty
             if (p1Score > p2Score) p1Score += p2Penalty

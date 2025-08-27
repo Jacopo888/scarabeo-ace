@@ -70,8 +70,8 @@ export default function DailyChallengePage() {
   }, [data]);
 
   const handlePlaceTile = (row: number, col: number, tile: Tile) => {
-    setPending((p) => [...p, { row, col, letter: tile.letter, value: tile.value, id: tile.id }]);
-    setRack((r) => r.filter((t) => t.id !== tile.id));
+    setPending((p) => [...p, { row, col, letter: tile.letter, points: tile.points, isBlank: tile.isBlank }]);
+    setRack((r) => r.filter((t, i) => i !== selected));
     setSelected(null);
   };
 
@@ -80,7 +80,7 @@ export default function DailyChallengePage() {
       const idx = p.findIndex((t) => t.row === row && t.col === col);
       if (idx >= 0) {
         const tile = p[idx];
-        setRack((r) => [...r, { id: tile.id, letter: tile.letter, value: tile.value }]);
+        setRack((r) => [...r, { letter: tile.letter, points: tile.points, isBlank: tile.isBlank }]);
         const arr = [...p];
         arr.splice(idx, 1);
         return arr;
@@ -123,7 +123,7 @@ export default function DailyChallengePage() {
     let score = 0;
     let wordMult = 1;
     for (const tile of wordTiles) {
-      let val = tile.value;
+      let val = tile.points;
       const isNew = pending.some((p) => p.row === tile.row && p.col === tile.col);
       if (isNew) {
         const bonus = getBonus(tile.row, tile.col);

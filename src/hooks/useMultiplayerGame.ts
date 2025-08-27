@@ -290,16 +290,16 @@ export const useMultiplayerGame = (gameId: string) => {
 
       const endGame = canEndGame(
         [
-          { rack: player1RackAfter as PlacedTile[] },
-          { rack: player2RackAfter as PlacedTile[] }
+          { rack: player1RackAfter },
+          { rack: player2RackAfter }
         ],
-        remaining as PlacedTile[],
+        remaining,
         0
       )
 
       if (endGame) {
-        const p1Penalty = calculateEndGamePenalty(player1RackAfter as PlacedTile[])
-        const p2Penalty = calculateEndGamePenalty(player2RackAfter as PlacedTile[])
+        const p1Penalty = calculateEndGamePenalty(player1RackAfter)
+        const p2Penalty = calculateEndGamePenalty(player2RackAfter)
         player1ScoreAfter -= p1Penalty
         player2ScoreAfter -= p2Penalty
         if (player1ScoreAfter > player2ScoreAfter) {
@@ -489,16 +489,16 @@ export const useMultiplayerGame = (gameId: string) => {
 
       const endGame = canEndGame(
         [
-          { rack: game.player1_rack as PlacedTile[] },
-          { rack: game.player2_rack as PlacedTile[] }
+          { rack: game.player1_rack },
+          { rack: game.player2_rack }
         ],
-        game.tile_bag as PlacedTile[],
+        game.tile_bag,
         newPassCount
       )
 
       if (endGame) {
-        const p1Penalty = calculateEndGamePenalty(game.player1_rack as PlacedTile[])
-        const p2Penalty = calculateEndGamePenalty(game.player2_rack as PlacedTile[])
+        const p1Penalty = calculateEndGamePenalty(game.player1_rack)
+        const p2Penalty = calculateEndGamePenalty(game.player2_rack)
         player1ScoreAfter -= p1Penalty
         player2ScoreAfter -= p2Penalty
         if (player1ScoreAfter > player2ScoreAfter) {
