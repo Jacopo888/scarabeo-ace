@@ -28,7 +28,9 @@ const GameContent = () => {
     reshuffleTiles,
     passTurn,
     exchangeTiles,
-    isBotTurn
+    isBotTurn,
+    surrenderGame,
+    isSurrendered
   } = useGameContext()
 
   const isMobile = useIsMobile()
@@ -36,12 +38,15 @@ const GameContent = () => {
   const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
   const { moves, analysis, analyzeGame, loading: analysisLoading } = useGameAnalysis(null)
 
-  const selectedTile = selectedTileIndex !== null 
-    ? { 
-        ...currentPlayer.rack[selectedTileIndex], 
-        id: `tile-${selectedTileIndex}`, 
-        value: currentPlayer.rack[selectedTileIndex].points 
-      } 
+  const humanPlayer = gameState.players.find(p => !p.isBot) || currentPlayer
+  const rackToShow = gameState.gameMode === 'bot' ? humanPlayer.rack : currentPlayer.rack
+
+  const selectedTile = selectedTileIndex !== null && !isBotTurn
+    ? {
+        ...rackToShow[selectedTileIndex],
+        id: `tile-${selectedTileIndex}`,
+        value: rackToShow[selectedTileIndex].points
+      }
     : null
 
   const handleTileSelect = (index: number) => {
@@ -50,6 +55,20 @@ const GameContent = () => {
   }
 
   const clearSelectedTile = () => setSelectedTileIndex(null)
+
+  const [tab, setTab] = useState<'summary' | 'analysis'>('summary')
+
+  useEffect(() => {
+    if (gameState.gameStatus === 'finished' && isSurrendered) {
+      setTab('analysis')
+    }
+  }, [gameState.gameStatus, isSurrendered])
+
+  useEffect(() => {
+    if (isBotTurn) {
+      setSelectedTileIndex(null)
+    }
+  }, [isBotTurn])
 
   // Start analysis when game finishes
   useEffect(() => {
@@ -94,7 +113,7 @@ const GameContent = () => {
           <h1 className="text-2xl font-bold">Game Results</h1>
         </div>
 
-        <Tabs defaultValue="summary" className="space-y-6">
+        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="summary" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
@@ -233,47 +252,54 @@ const GameContent = () => {
             </div>
             <div className="mt-6 space-y-4">
               <TileRack
-                tiles={currentPlayer.rack}
-                selectedTiles={!currentPlayer.isBot && selectedTileIndex !== null ? [selectedTileIndex] : []}
-                onTileSelect={!currentPlayer.isBot ? handleTileSelect : undefined}
+                tiles={rackToShow}
+                selectedTiles={!isBotTurn && selectedTileIndex !== null ? [selectedTileIndex] : []}
+                onTileSelect={!isBotTurn ? handleTileSelect : undefined}
               />
-              {!currentPlayer.isBot && (
+              {!isBotTurn && (
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button
                     onClick={confirmMove}
-                    disabled={isBotTurn || pendingTiles.length === 0}
+                    disabled={pendingTiles.length === 0}
                   >
                     Confirm Move
                   </Button>
                   <Button
                     onClick={cancelMove}
                     variant="outline"
-                    disabled={isBotTurn || pendingTiles.length === 0}
+                    disabled={pendingTiles.length === 0}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={passTurn}
                     variant="outline"
-                    disabled={isBotTurn}
                   >
                     Pass Turn
                   </Button>
                   <Button
                     onClick={exchangeTiles}
                     variant="outline"
-                    disabled={isBotTurn || gameState.tileBag.length < currentPlayer.rack.length}
+                    disabled={gameState.tileBag.length < rackToShow.length}
                   >
                     Swap Tiles
                   </Button>
                   <Button
                     onClick={reshuffleTiles}
                     variant="outline"
-                    disabled={isBotTurn}
                   >
                     Reshuffle Tiles
                   </Button>
                 </div>
+              )}
+              {gameState.gameStatus === 'playing' && (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={surrenderGame}
+                >
+                  Surrender
+                </Button>
               )}
             </div>
           </div>
