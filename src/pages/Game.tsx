@@ -207,7 +207,7 @@ const GameContent = () => {
 
       <div className="space-y-6">
         <div className="space-y-6">
-          <div className="bg-card p-6 rounded-lg shadow-lg relative">
+          <div className="bg-card p-2 sm:p-6 rounded-lg shadow-lg relative">
             <div className="flex justify-center">
               <ScrabbleBoard
                 disabled={isBotTurn || currentPlayer.isBot}
@@ -236,7 +236,7 @@ const GameContent = () => {
                 ))}
               </div>
             </div>
-            <div className="mt-6 space-y-4">
+            <div className="mt-4 sm:mt-6 space-y-4 pb-20 sm:pb-0">
               <TileRack
                 tiles={rackToShow}
                 selectedTiles={!isBotTurn && selectedTileIndex !== null ? [selectedTileIndex] : []}

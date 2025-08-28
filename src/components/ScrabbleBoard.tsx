@@ -53,8 +53,10 @@ const getSquareColor = (type: string) => {
 
 const getSquareText = (type: string) => {
   switch (type) {
-    case "TW": return "3W"
-    case "DW": return "2W"
+    // Use Italian abbreviations on the board for mobile/desktop
+    // TW/DW => 3P/2P (Tripla/ Doppia Parola), TL/DL => 3L/2L (Lettera)
+    case "TW": return "3P"
+    case "DW": return "2P"
     case "TL": return "3L"
     case "DL": return "2L"
     case "STAR": return "★"
@@ -273,13 +275,14 @@ export const ScrabbleBoard = ({
   return (
     <div
       className={cn(
-        "bg-board p-4 rounded-lg shadow-lg max-w-full overflow-hidden",
+        // Tighter padding on mobile to maximize available space
+        "bg-board p-2 sm:p-4 rounded-lg shadow-lg max-w-full overflow-hidden mx-auto",
         disabled && "opacity-50 pointer-events-none"
       )}
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-[1px] bg-board-border p-2 rounded origin-top-left transition-transform"
+        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform"
         style={{ width: 'fit-content', transform: `scale(${boardScale})`, transformOrigin: 'top center' }}
       >
         {Array.from({ length: 15 }, (_, row) =>
