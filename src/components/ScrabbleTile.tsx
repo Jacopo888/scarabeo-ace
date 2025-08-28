@@ -39,7 +39,9 @@ export const ScrabbleTile = ({
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        "w-12 h-12 bg-tile border-2 border-tile-text rounded-md flex flex-col items-center justify-center transition-all shadow-md select-none",
+        "w-12 h-12 bg-tile rounded-md flex flex-col items-center justify-center transition-all select-none",
+        // Use thinner border and smaller shadow on-board to fit in small squares
+        isOnBoard ? "border border-tile-text shadow" : "border-2 border-tile-text shadow-md",
         draggable && "cursor-grab",
         !draggable && isOnBoard && "cursor-pointer",
         isSelected && "border-primary bg-primary/10",
@@ -52,10 +54,22 @@ export const ScrabbleTile = ({
       onDragStart={onDragStart as any}
       onDragEnd={onDragEnd as any}
     >
-      <span className="text-tile-text font-bold text-lg leading-none">
+      <span
+        className={cn(
+          "text-tile-text font-bold leading-none",
+          // Smaller letter on-board for compact cells
+          isOnBoard ? "text-sm" : "text-lg"
+        )}
+      >
         {displayLetter}
       </span>
-      <span className="text-tile-text text-xs leading-none mt-px">
+      <span
+        className={cn(
+          "text-tile-text leading-none mt-px",
+          // Smaller corner points on-board
+          isOnBoard ? "text-[10px]" : "text-xs"
+        )}
+      >
         {displayPoints}
       </span>
     </motion.div>

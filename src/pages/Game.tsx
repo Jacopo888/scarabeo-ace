@@ -62,10 +62,10 @@ const GameContent = () => {
   const [tab, setTab] = useState<'summary' | 'analysis'>('summary')
 
   useEffect(() => {
-    if (gameState.gameStatus === 'finished' && isSurrendered) {
+    if (gameState.gameStatus === 'finished') {
       setTab('analysis')
     }
-  }, [gameState.gameStatus, isSurrendered])
+  }, [gameState.gameStatus])
 
   useEffect(() => {
     if (isBotTurn) {
