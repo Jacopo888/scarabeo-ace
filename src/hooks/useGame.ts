@@ -562,6 +562,29 @@ export const useGame = () => {
           })
           
           setIsBotTurn(false)
+
+          // Record move for post-game analysis
+          try {
+            const isHorizontal = bestMove.tiles.every(t => t.row === bestMove.tiles[0].row)
+            const ordered = [...bestMove.tiles].sort((a, b) =>
+              isHorizontal ? a.col - b.col : a.row - b.row
+            )
+            const placedString = ordered.map(t => t.letter).join('')
+            const row = Math.min(...bestMove.tiles.map(t => t.row))
+            const col = Math.min(...bestMove.tiles.map(t => t.col))
+            const moveInfo: Omit<GameMove, 'move_index'> = {
+              word: placedString,
+              score_earned: bestMove.score,
+              rack_before: currentPlayer.rack,
+              player_id: currentPlayer.id,
+              row,
+              col,
+              dir: isHorizontal ? 'H' : 'V'
+            }
+            setMoveHistory(prev => [...prev, { ...moveInfo, move_index: prev.length + 1 }])
+          } catch (e) {
+            // ignore
+          }
           
           const newPassCounts = [...(prevState.passCounts || Array(prevState.players.length).fill(0))]
           newPassCounts[prevState.currentPlayerIndex] = 0

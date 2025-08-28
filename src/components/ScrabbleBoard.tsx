@@ -101,17 +101,22 @@ export const ScrabbleBoard = ({
   const placeTileHandler = onPlaceTile || storePlaceTile
 
   useEffect(() => {
-    const updateScale = () => {
-      if (!boardRef.current) return
-      const boardWidth = boardRef.current.scrollWidth
-      const available = window.innerWidth - 16 // Reduced padding
-      const scale = Math.min(1, available / boardWidth)
-      setBoardScale(scale)
-    }
+    if (!boardRef.current) return
+    const container = boardRef.current.parentElement
+    if (!container) return
 
-    updateScale()
-    window.addEventListener('resize', updateScale)
-    return () => window.removeEventListener('resize', updateScale)
+    const ro = new ResizeObserver(() => {
+      const boardWidth = boardRef.current?.scrollWidth || 0
+      const styles = getComputedStyle(container)
+      const paddingLeft = parseFloat(styles.paddingLeft) || 0
+      const paddingRight = parseFloat(styles.paddingRight) || 0
+      const available = (container.clientWidth || window.innerWidth) - (paddingLeft + paddingRight)
+      const scale = boardWidth > 0 ? Math.min(1, available / boardWidth) : 1
+      setBoardScale(scale)
+    })
+
+    ro.observe(container)
+    return () => ro.disconnect()
   }, [])
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     if (disabled) return
@@ -221,7 +226,7 @@ export const ScrabbleBoard = ({
       <div
         key={key}
         className={cn(
-          "w-9 h-9 border border-board-border flex items-center justify-center text-xs font-bold transition-all rounded relative",
+          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all rounded relative",
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
@@ -253,8 +258,8 @@ export const ScrabbleBoard = ({
               onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
               onDragEnd={pendingTile ? handleTileDragEnd : undefined}
               className={cn(
-                "w-8 h-8 text-[10px]",
-                pendingTile && "ring-2 ring-primary/50" // Highlight pending tiles
+                "w-8 h-8 sm:w-9 sm:h-9 text-[9px] sm:text-[10px]",
+                pendingTile && "ring-2 ring-primary/50"
               )}
             />
           </div>
@@ -268,14 +273,14 @@ export const ScrabbleBoard = ({
   return (
     <div
       className={cn(
-        "bg-board p-4 rounded-lg shadow-lg max-w-full",
+        "bg-board p-4 rounded-lg shadow-lg max-w-full overflow-hidden",
         disabled && "opacity-50 pointer-events-none"
       )}
     >
       <div
         ref={boardRef}
         className="grid grid-cols-15 gap-[1px] bg-board-border p-2 rounded origin-top-left transition-transform"
-        style={{ width: 'fit-content', transform: `scale(${boardScale})` }}
+        style={{ width: 'fit-content', transform: `scale(${boardScale})`, transformOrigin: 'top center' }}
       >
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))

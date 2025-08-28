@@ -32,6 +32,45 @@ export class ScrabbleBot {
     this.isDictionaryLoaded = isDictionaryLoaded
   }
 
+  // Try assigning letters to blank tiles so that all formed words are valid
+  private assignBlankLetters(
+    board: Map<string, PlacedTile> | null,
+    tiles: PlacedTile[]
+  ): PlacedTile[] | null {
+    const blanks = tiles
+      .map((t, i) => ({ tile: t, index: i }))
+      .filter(({ tile }) => tile.isBlank)
+
+    if (blanks.length === 0) return tiles
+
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+    const commonFirst = ['E','A','O','I','N','R','T','L','S','U']
+    const remaining = alphabet.filter(l => !commonFirst.includes(l))
+    const letterOrder = [...commonFirst, ...remaining]
+
+    const tryAssign = (idx: number, current: PlacedTile[]): PlacedTile[] | null => {
+      if (idx >= blanks.length) {
+        const words = findNewWordsFormed(board || new Map(), current)
+        if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
+          return current
+        }
+        return null
+      }
+
+      const { index } = blanks[idx]
+      for (const letter of letterOrder) {
+        const next = current.map((t, i) =>
+          i === index ? { ...t, letter, points: 0, isBlank: true } : t
+        )
+        const result = tryAssign(idx + 1, next)
+        if (result) return result
+      }
+      return null
+    }
+
+    return tryAssign(0, tiles)
+  }
+
   generateAllPossibleMoves(gameState: GameState, playerRack: Tile[]): BotMove[] {
     if (!this.isDictionaryLoaded) return []
 
@@ -51,11 +90,8 @@ export class ScrabbleBot {
     // Filter valid moves and calculate composite scores
     return moves
       .filter(move => {
-        // First check move logic (placement rules)
         const validation = validateMoveLogic(board, move.tiles)
         if (!validation.isValid) return false
-        
-        // Then check if words are valid in dictionary
         const newWords = findNewWordsFormed(board, move.tiles)
         return newWords.length > 0 && newWords.every(w => this.isValidWordFn(w.word))
       })
@@ -84,27 +120,28 @@ export class ScrabbleBot {
     const candidates = this.generateTileCombinations(rack, centerRow, centerCol, true)
     
     for (const candidate of candidates) {
-      const words = findNewWordsFormed(new Map(), candidate.tiles)
-      if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
-        // Ensure the main word equals the placed contiguous letters
-        const isHorizontal = candidate.tiles.every(t => t.row === candidate.tiles[0].row)
-        const ordered = [...candidate.tiles].sort((a, b) =>
-          isHorizontal ? a.col - b.col : a.row - b.row
-        )
-        const placedString = ordered.map(t => t.letter).join('')
-        const containsMain = words.some(w => w.word === placedString)
-        if (!containsMain) continue
+      const withAssigned = this.assignBlankLetters(null, candidate.tiles)
+      if (!withAssigned) continue
+      const words = findNewWordsFormed(new Map(), withAssigned)
+      if (words.length === 0 || !words.every(w => this.isValidWordFn(w.word))) continue
 
-        const score = calculateNewMoveScore(words, candidate.tiles)
-        moves.push({
-          tiles: candidate.tiles,
-          score,
-          words: words.map(w => w.word),
-          qualityScore: 0,
-          strategicScore: 0,
-          totalScore: 0
-        })
-      }
+      const isHorizontal = withAssigned.every(t => t.row === withAssigned[0].row)
+      const ordered = [...withAssigned].sort((a, b) =>
+        isHorizontal ? a.col - b.col : a.row - b.row
+      )
+      const placedString = ordered.map(t => t.letter).join('')
+      const containsMain = words.some(w => w.word === placedString)
+      if (!containsMain) continue
+
+      const score = calculateNewMoveScore(words, withAssigned)
+      moves.push({
+        tiles: withAssigned,
+        score,
+        words: words.map(w => w.word),
+        qualityScore: 0,
+        strategicScore: 0,
+        totalScore: 0
+      })
     }
     
     return moves
@@ -125,27 +162,28 @@ export class ScrabbleBot {
         })
         
         if (!hasOverlap) {
-          const words = findNewWordsFormed(board, candidate.tiles)
-          if (words.length > 0 && words.every(w => this.isValidWordFn(w.word))) {
-            // Ensure the main word equals the placed contiguous letters
-            const isHorizontal = candidate.tiles.every(t => t.row === candidate.tiles[0].row)
-            const ordered = [...candidate.tiles].sort((a, b) =>
-              isHorizontal ? a.col - b.col : a.row - b.row
-            )
-            const placedString = ordered.map(t => t.letter).join('')
-            const containsMain = words.some(w => w.word === placedString)
-            if (!containsMain) continue
+          const withAssigned = this.assignBlankLetters(board, candidate.tiles)
+          if (!withAssigned) continue
+          const words = findNewWordsFormed(board, withAssigned)
+          if (words.length === 0 || !words.every(w => this.isValidWordFn(w.word))) continue
 
-            const score = calculateNewMoveScore(words, candidate.tiles)
-            moves.push({
-              tiles: candidate.tiles,
-              score,
-              words: words.map(w => w.word),
-              qualityScore: 0,
-              strategicScore: 0,
-              totalScore: 0
-            })
-          }
+          const isHorizontal = withAssigned.every(t => t.row === withAssigned[0].row)
+          const ordered = [...withAssigned].sort((a, b) =>
+            isHorizontal ? a.col - b.col : a.row - b.row
+          )
+          const placedString = ordered.map(t => t.letter).join('')
+          const containsMain = words.some(w => w.word === placedString)
+          if (!containsMain) continue
+
+          const score = calculateNewMoveScore(words, withAssigned)
+          moves.push({
+            tiles: withAssigned,
+            score,
+            words: words.map(w => w.word),
+            qualityScore: 0,
+            strategicScore: 0,
+            totalScore: 0
+          })
         }
       }
     }
@@ -279,13 +317,17 @@ export class ScrabbleBot {
 
   private getRemainingTiles(rack: Tile[], usedTiles: PlacedTile[]): Tile[] {
     const rackCopy = [...rack]
-    const usedLetters = usedTiles.map(t => t.letter)
-    
-    for (const letter of usedLetters) {
-      const index = rackCopy.findIndex(t => t.letter === letter)
-      if (index !== -1) {
-        rackCopy.splice(index, 1)
+    const usedTilesCopy = [...usedTiles]
+    // Remove matching tiles; treat blanks specially (match any one tile with isBlank)
+    for (const used of usedTilesCopy) {
+      let index = -1
+      if (used.isBlank) {
+        index = rackCopy.findIndex(t => t.isBlank)
+      } else {
+        index = rackCopy.findIndex(t => !t.isBlank && t.letter === used.letter && t.points === used.points)
+        // If bot assigned a letter to a blank (points 0, isBlank true), above branch handles it
       }
+      if (index !== -1) rackCopy.splice(index, 1)
     }
     
     return rackCopy

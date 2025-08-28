@@ -15,9 +15,9 @@ export const TileRack = ({ tiles, selectedTiles = [], onTileSelect, onTileDragSt
   const rack = tiles || storeRack
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
   return (
-    <div className="bg-secondary p-4 rounded-lg shadow-lg">
+    <div className="bg-secondary p-4 rounded-lg shadow-lg overflow-hidden">
       <h3 className="text-sm font-medium text-secondary-foreground mb-3">Your tiles</h3>
-      <div className="flex gap-2 justify-center">
+      <div className="flex gap-2 justify-center flex-wrap max-w-full">
         {rack.map((tile, index) => (
           <ScrabbleTile
             key={index}
