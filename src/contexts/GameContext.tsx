@@ -1,6 +1,7 @@
 import { createContext, useContext, ReactNode } from 'react'
 import { useGame } from '@/hooks/useGame'
 import { GameState, Player, Tile, PlacedTile } from '@/types/game'
+import type { GameMove } from '@/hooks/useGameAnalysis'
 
 interface GameContextType {
   gameState: GameState
@@ -19,6 +20,8 @@ interface GameContextType {
   isSurrendered: boolean
   currentPlayer: Player
   isCurrentPlayerTurn: (playerId: string) => boolean
+  moveHistory: GameMove[]
+  gameId: string
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -54,7 +57,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     isBotTurn,
     isSurrendered,
     currentPlayer,
-    isCurrentPlayerTurn
+    isCurrentPlayerTurn,
+    moveHistory,
+    gameId
   } = gameLogic
 
   return (
@@ -75,7 +80,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
         isBotTurn,
         isSurrendered,
         currentPlayer,
-        isCurrentPlayerTurn
+        isCurrentPlayerTurn,
+        moveHistory,
+        gameId
       }}
     >
       {children}
