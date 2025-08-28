@@ -47,13 +47,13 @@ const Daily = () => {
     try {
       // Try to fetch today's puzzle
       const { data: existingPuzzle, error } = await supabase
-        .from<DailyPuzzle>('daily_puzzles')
+        .from('daily_puzzles')
         .select('*')
         .eq('yyyymmdd', todayNumber)
         .single();
 
       if (existingPuzzle) {
-        setDailyPuzzle(existingPuzzle);
+        setDailyPuzzle(existingPuzzle as unknown as DailyPuzzle);
       } else if (error?.code === 'PGRST116') {
         // No puzzle exists, create one
         await createTodaysPuzzle();
@@ -76,13 +76,13 @@ const Daily = () => {
 
       const newPuzzle = {
         yyyymmdd: todayNumber,
-        board: puzzle.board,
-        rack: puzzle.rack,
+        board: puzzle.board as any,
+        rack: puzzle.rack as any,
         best_score: bestScore,
       };
 
       const { data, error } = await supabase
-        .from<DailyPuzzle>('daily_puzzles')
+        .from('daily_puzzles')
         .insert(newPuzzle)
         .select()
         .single();
@@ -96,7 +96,7 @@ const Daily = () => {
         throw error;
       }
 
-      setDailyPuzzle(data);
+      setDailyPuzzle(data as unknown as DailyPuzzle);
       toast.success('New daily puzzle generated!');
     } catch (error) {
       console.error('Error creating daily puzzle:', error);

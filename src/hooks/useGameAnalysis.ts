@@ -60,6 +60,7 @@ export const useGameAnalysis = (gameId: string | null, initialMoves: GameMove[] 
 
     try {
       setLoading(true)
+      setError(null)
       
       // Convert moves to analysis format
       const analysisRequest: AnalysisRequest = {
@@ -78,7 +79,16 @@ export const useGameAnalysis = (gameId: string | null, initialMoves: GameMove[] 
       const analysisResult = await postAnalysis(analysisRequest)
       setAnalysis(analysisResult)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analysis failed')
+      const errorMessage = err instanceof Error ? err.message : 'Analysis failed'
+      console.error('Game analysis error:', err)
+      
+      if (errorMessage.includes('not available in this environment')) {
+        setError('Game analysis is not available in preview mode')
+      } else if (errorMessage.includes('NetworkError') || errorMessage.includes('fetch')) {
+        setError('Unable to connect to analysis service. Please try again later.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setLoading(false)
     }

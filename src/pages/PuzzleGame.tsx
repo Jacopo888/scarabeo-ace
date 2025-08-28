@@ -79,6 +79,97 @@ const PuzzleGame = () => {
   const isMobile = useIsMobile()
   const { data: apiPuzzle, error: puzzleError, mutate: refetchPuzzle } = usePuzzlePuzzle()
 
+  const initializePuzzle = useCallback((puzzle: Puzzle) => {
+    // Convert board array to Map for efficient lookups
+    const boardMap = new Map<string, PlacedTile>()
+    puzzle.board.forEach(tile => {
+      boardMap.set(`${tile.row},${tile.col}`, tile)
+    })
+    
+    // If puzzle has no topMoves (API puzzle), generate them locally
+    let finalPuzzle = puzzle
+    if (puzzle.topMoves.length === 0 && isDictionaryLoaded) {
+      const localTopMoves = getTopMovesForBoard(boardMap, puzzle.rack, isValidWord, isDictionaryLoaded)
+      finalPuzzle = {
+        ...puzzle,
+        topMoves: localTopMoves
+      }
+    }
+    
+    setInitialBoard(boardMap)
+    setGameState({
+      puzzle: finalPuzzle,
+      foundMoves: new Set(),
+      pendingTiles: [],
+      remainingRack: [...finalPuzzle.rack],
+      isGameOver: false,
+      totalScore: 0,
+      hints: {
+        currentMoveIndex: 0,
+        anchorRevealed: false,
+        lengthRevealed: false,
+        lettersRevealed: false
+      }
+    })
+    start(90) // 90 seconds
+  }, [isDictionaryLoaded, isValidWord, start])
+
+  const submitDailyScore = async (score: number) => {
+    try {
+      const today = new Date()
+      const utc = new Date(today.getTime() + today.getTimezoneOffset() * 60000)
+      const yyyymmdd = utc.getFullYear() * 10000 + (utc.getMonth() + 1) * 100 + utc.getDate()
+      
+      const userId = user?.id || `anon-${Date.now()}`
+      
+      if (!user) {
+        localStorage.setItem(`daily:${yyyymmdd}:played`, 'true')
+        localStorage.setItem(`daily:${yyyymmdd}:score`, score.toString())
+      }
+
+      await supabase.from('daily_scores').upsert({
+        user_id: userId,
+        yyyymmdd,
+        score
+      }, { onConflict: 'user_id,yyyymmdd' })
+    } catch (error) {
+      console.error('Error submitting daily score:', error)
+    }
+  }
+
+  const endGame = useCallback(async () => {
+    if (!gameState.puzzle || gameState.isGameOver) return
+    
+    setGameState(prev => ({ ...prev, isGameOver: true }))
+
+    if (isDailyMode) {
+      await submitDailyScore(gameState.totalScore)
+      toast({
+        title: "Daily Challenge Complete!",
+        description: `Your score of ${gameState.totalScore} points has been recorded.`,
+        variant: "default"
+      })
+    } else if (user && currentPuzzleId) {
+      try {
+        await submitPuzzleScore({
+          puzzleId: currentPuzzleId,
+          userId: user.id,
+          score: gameState.totalScore
+        })
+        
+        toast({
+          title: "Score Submitted!",
+          description: `Your score of ${gameState.totalScore} points has been recorded.`,
+          variant: "default"
+        })
+      } catch (error) {
+        console.error('Error submitting score:', error)
+        setSubmissionError(error instanceof Error ? error.message : 'Failed to submit score')
+        setShowSubmissionError(true)
+      }
+    }
+  }, [gameState, isDailyMode, user, currentPuzzleId, toast, submitDailyScore])
+
   // Check for daily mode
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
@@ -183,41 +274,6 @@ const PuzzleGame = () => {
     }
   }
 
-  const initializePuzzle = useCallback((puzzle: Puzzle) => {
-    // Convert board array to Map for efficient lookups
-    const boardMap = new Map<string, PlacedTile>()
-    puzzle.board.forEach(tile => {
-      boardMap.set(`${tile.row},${tile.col}`, tile)
-    })
-    
-    // If puzzle has no topMoves (API puzzle), generate them locally
-    let finalPuzzle = puzzle
-    if (puzzle.topMoves.length === 0 && isDictionaryLoaded) {
-      const localTopMoves = getTopMovesForBoard(boardMap, puzzle.rack, isValidWord, isDictionaryLoaded)
-      finalPuzzle = {
-        ...puzzle,
-        topMoves: localTopMoves
-      }
-    }
-    
-    setInitialBoard(boardMap)
-    setGameState({
-      puzzle: finalPuzzle,
-      foundMoves: new Set(),
-      pendingTiles: [],
-      remainingRack: [...finalPuzzle.rack],
-      isGameOver: false,
-      totalScore: 0,
-      hints: {
-        currentMoveIndex: 0,
-        anchorRevealed: false,
-        lengthRevealed: false,
-        lettersRevealed: false
-      }
-    })
-    start(90) // 90 seconds
-  }, [isDictionaryLoaded, isValidWord, start])
-
   const handleTileSelect = (index: number) => {
     if (gameState.isGameOver) return
     setSelectedTileIndex(selectedTileIndex === index ? null : index)
@@ -232,8 +288,8 @@ const PuzzleGame = () => {
 
     // Convert StoreTile to GameTile if needed
     const gameTile: Tile = 'value' in tile && !('points' in tile)
-      ? { letter: tile.letter, points: tile.value, isBlank: 'isBlank' in tile ? tile.isBlank : undefined }
-      : tile
+      ? { letter: tile.letter, points: Number(tile.value), isBlank: Boolean('isBlank' in tile ? tile.isBlank : false) }
+      : tile as Tile
     
     
     // Find the tile in remaining rack
@@ -388,62 +444,6 @@ const PuzzleGame = () => {
     }))
     setSelectedTileIndex(null)
   }
-
-  const submitDailyScore = async (score: number) => {
-    try {
-      const today = new Date()
-      const utc = new Date(today.getTime() + today.getTimezoneOffset() * 60000)
-      const yyyymmdd = utc.getFullYear() * 10000 + (utc.getMonth() + 1) * 100 + utc.getDate()
-      
-      const userId = user?.id || `anon-${Date.now()}`
-      
-      if (!user) {
-        localStorage.setItem(`daily:${yyyymmdd}:played`, 'true')
-        localStorage.setItem(`daily:${yyyymmdd}:score`, score.toString())
-      }
-
-      await supabase.from('daily_scores').upsert({
-        user_id: userId,
-        yyyymmdd,
-        score
-      }, { onConflict: 'user_id,yyyymmdd' })
-    } catch (error) {
-      console.error('Error submitting daily score:', error)
-    }
-  }
-
-  const endGame = useCallback(async () => {
-    if (!gameState.puzzle || gameState.isGameOver) return
-    
-    setGameState(prev => ({ ...prev, isGameOver: true }))
-
-    if (isDailyMode) {
-      await submitDailyScore(gameState.totalScore)
-      toast({
-        title: "Daily Challenge Complete!",
-        description: `Your score of ${gameState.totalScore} points has been recorded.`,
-        variant: "default"
-      })
-    } else if (user && currentPuzzleId) {
-      try {
-        await submitPuzzleScore({
-          puzzleId: currentPuzzleId,
-          userId: user.id,
-          score: gameState.totalScore
-        })
-        
-        toast({
-          title: "Score Submitted!",
-          description: `Your score of ${gameState.totalScore} points has been recorded.`,
-          variant: "default"
-        })
-      } catch (error) {
-        console.error('Error submitting score:', error)
-        setSubmissionError(error instanceof Error ? error.message : 'Failed to submit score')
-        setShowSubmissionError(true)
-      }
-    }
-  }, [gameState, isDailyMode, submitDailyScore, toast, user, currentPuzzleId])
 
   const retrySubmission = async () => {
     if (!user || !currentPuzzleId) return
@@ -643,8 +643,8 @@ const PuzzleGame = () => {
             pendingTiles={gameState.pendingTiles}
             onPlaceTile={(row, col, tile) => {
               const gameTile: Tile = 'value' in tile && !('points' in tile)
-                ? { letter: tile.letter, points: tile.value, isBlank: 'isBlank' in tile ? tile.isBlank : undefined }
-                : tile
+                ? { letter: tile.letter, points: Number(tile.value), isBlank: Boolean('isBlank' in tile ? tile.isBlank : false) }
+                : tile as Tile
               if (gameTile.isBlank && gameTile.letter === '') {
                 setBlankTile({ row, col, tile: gameTile })
               } else {

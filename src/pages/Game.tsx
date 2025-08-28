@@ -95,7 +95,7 @@ const GameContent = () => {
           <h1 className="text-2xl font-bold">Game Results</h1>
         </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+        <Tabs value={tab} onValueChange={(value) => setTab(value as 'summary' | 'analysis')} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="summary" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
@@ -217,8 +217,8 @@ const GameContent = () => {
                 pendingTiles={pendingTiles}
                 onPlaceTile={(row, col, tile) => {
                   const gameTile: Tile = 'value' in tile && !('points' in tile)
-                    ? { letter: tile.letter, points: tile.value, isBlank: tile.isBlank }
-                    : tile
+                    ? { letter: tile.letter, points: Number(tile.value), isBlank: Boolean('isBlank' in tile ? tile.isBlank : false) }
+                    : tile as Tile
                   if (gameTile.isBlank && gameTile.letter === '') {
                     setBlankTile({ row, col, tile: gameTile })
                   } else {

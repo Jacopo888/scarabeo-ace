@@ -1,4 +1,14 @@
-const API_BASE = import.meta.env.VITE_RATING_API_URL || (import.meta.env.MODE === 'development' ? '/api' : '')
+const API_BASE = (() => {
+  const url = import.meta.env.VITE_RATING_API_URL
+  if (import.meta.env.MODE === 'development') {
+    return '/api'
+  }
+  // Only use external URL if it's valid and not localhost in production
+  if (url && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+    return url
+  }
+  return '' // Disable API calls if no valid production URL
+})()
 
 export interface AnalysisMove {
   row: number
@@ -70,7 +80,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 
 export async function postAnalysis(payload: AnalysisRequest): Promise<AnalysisResponse> {
   if (!API_BASE) {
-    throw new Error('Rating API not configured - analysis unavailable')
+    throw new Error('Game analysis is not available in this environment')
   }
 
   const response = await fetchWithTimeout(`${API_BASE}/analysis`, {
@@ -82,7 +92,8 @@ export async function postAnalysis(payload: AnalysisRequest): Promise<AnalysisRe
   })
 
   if (!response.ok) {
-    throw new Error(`Analysis failed: ${response.status} ${response.statusText}`)
+    const errorText = await response.text().catch(() => 'Unknown error')
+    throw new Error(`Analysis failed: ${response.status} - ${errorText}`)
   }
 
   return response.json()
