@@ -7,6 +7,7 @@ import { canEndGame, calculateEndGamePenalty } from '@/utils/gameRules'
 import { useToast } from '@/hooks/use-toast'
 import { useBotContext } from '@/contexts/BotContext'
 import { useDictionary } from '@/contexts/DictionaryContext'
+import type { GameMove } from './useGameAnalysis'
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array]
@@ -30,6 +31,8 @@ export const useGame = () => {
   const [pendingTiles, setPendingTiles] = useState<PlacedTile[]>([])
   const [isBotTurn, setIsBotTurn] = useState(false)
   const [isSurrendered, setIsSurrendered] = useState(false)
+  const [moveHistory, setMoveHistory] = useState<GameMove[]>([])
+  const gameIdRef = useRef<string>(crypto.randomUUID())
   const [gameState, setGameState] = useState<GameState>(() => {
     const shuffledBag = shuffleArray(TILE_DISTRIBUTION)
     const player1Tiles = drawTiles(shuffledBag, 7)
@@ -137,10 +140,12 @@ export const useGame = () => {
       return
     }
 
+    let moveInfo: Omit<GameMove, 'move_index'> | null = null
+
     setGameState(prev => {
       // Validate the move using new logic
       const validation = validateMoveLogic(prev.board, pendingTiles)
-      
+
       if (!validation.isValid) {
         toast({
           title: "Invalid move",
@@ -152,7 +157,7 @@ export const useGame = () => {
 
       // Find only the new words formed by this move
       const newWords = findNewWordsFormed(prev.board, pendingTiles)
-      
+
       // Validate all new words in dictionary
       const invalidWords = newWords.filter(word => !isValidWord(word.word))
       if (invalidWords.length > 0) {
@@ -166,38 +171,53 @@ export const useGame = () => {
 
       // Calculate score only for new words
       const score = calculateNewMoveScore(newWords, pendingTiles)
-      
+
       // Add tiles to board
       const newBoard = new Map(prev.board)
       pendingTiles.forEach(tile => {
         const key = `${tile.row},${tile.col}`
         newBoard.set(key, tile)
       })
-      
+
       // Update player score and rack
       const currentPlayer = prev.players[prev.currentPlayerIndex]
       const tilesNeeded = 7 - currentPlayer.rack.length
-      
+
       // Draw new tiles
       const { drawn, remaining } = tilesNeeded > 0 && prev.tileBag.length > 0
         ? drawTiles(prev.tileBag, Math.min(tilesNeeded, prev.tileBag.length))
         : { drawn: [], remaining: prev.tileBag }
-      
+
       const newPlayers = [...prev.players]
       newPlayers[prev.currentPlayerIndex] = {
         ...currentPlayer,
         score: currentPlayer.score + score,
         rack: [...currentPlayer.rack, ...drawn]
       }
-      
+
+      // Prepare move info for analysis
+      const rackBefore = [...currentPlayer.rack, ...pendingTiles]
+      const row = Math.min(...pendingTiles.map(t => t.row))
+      const col = Math.min(...pendingTiles.map(t => t.col))
+      const dir = pendingTiles.every(t => t.row === pendingTiles[0].row) ? 'H' : 'V'
+      moveInfo = {
+        word: newWords[0]?.word || '',
+        score_earned: score,
+        rack_before: rackBefore,
+        player_id: currentPlayer.id,
+        row,
+        col,
+        dir
+      }
+
       // Clear pending tiles
       setPendingTiles([])
-      
+
       toast({
         title: "Move confirmed!",
-        description: `+${score} points for words: ${newWords.map(w => w.word).join(', ')}`,
+        description: `+${score} points for words: ${newWords.map(w => w.word).join(', ')}`
       })
-      
+
       const newPassCounts = [...(prev.passCounts || Array(prev.players.length).fill(0))]
       newPassCounts[prev.currentPlayerIndex] = 0
       const nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length
@@ -239,6 +259,10 @@ export const useGame = () => {
         lastMove: pendingTiles
       }
     })
+
+    if (moveInfo) {
+      setMoveHistory(prev => [...prev, { ...moveInfo!, move_index: prev.length + 1 }])
+    }
   }, [pendingTiles, toast, isValidWord])
 
   const cancelMove = useCallback(() => {
@@ -443,6 +467,8 @@ export const useGame = () => {
     })
     setPendingTiles([])
     setIsSurrendered(false)
+    setMoveHistory([])
+    gameIdRef.current = crypto.randomUUID()
   }, [difficulty])
 
   // Bot move logic
@@ -655,6 +681,8 @@ export const useGame = () => {
     isBotTurn,
     isSurrendered,
     currentPlayer: gameState.players[gameState.currentPlayerIndex],
-    isCurrentPlayerTurn: (playerId: string) => gameState.players[gameState.currentPlayerIndex].id === playerId
+    isCurrentPlayerTurn: (playerId: string) => gameState.players[gameState.currentPlayerIndex].id === playerId,
+    moveHistory,
+    gameId: gameIdRef.current
   }
 }

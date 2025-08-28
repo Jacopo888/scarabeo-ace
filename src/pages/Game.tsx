@@ -30,13 +30,15 @@ const GameContent = () => {
     exchangeTiles,
     isBotTurn,
     surrenderGame,
-    isSurrendered
+    isSurrendered,
+    moveHistory,
+    gameId
   } = useGameContext()
 
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
   const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
-  const { moves, analysis, analyzeGame, loading: analysisLoading } = useGameAnalysis(null)
+  const { moves, analysis, analyzeGame, loading: analysisLoading, error: analysisError } = useGameAnalysis(gameId, moveHistory)
 
   const humanPlayer = gameState.players.find(p => !p.isBot) || currentPlayer
   const rackToShow = gameState.gameMode === 'bot' ? humanPlayer.rack : currentPlayer.rack
@@ -76,27 +78,6 @@ const GameContent = () => {
       analyzeGame()
     }
   }, [gameState.gameStatus, moves.length, analyzeGame])
-
-  // Generate mock game data for analysis (in real app, this would come from game history)
-  const generateAnalysisData = () => {
-    const moves: Array<{row: number, col: number, word: string, score: number, direction: 'H' | 'V', rackBefore: string}> = []
-    
-    // Convert board state to moves (simplified for demo)
-    const boardEntries = Array.from(gameState.board.entries())
-    if (boardEntries.length > 0) {
-      // Mock some moves based on current board state
-      moves.push({
-        row: 7,
-        col: 7,
-        word: "HELLO",
-        score: 10,
-        direction: 'H',
-        rackBefore: "HELLOWR"
-      })
-    }
-    
-    return { moves, lexicon: 'NWL' as const }
-  }
 
   if (gameState.gameStatus === 'finished') {
     const winner = gameState.players.reduce((prev, current) => (prev.score > current.score) ? prev : current)
@@ -184,6 +165,10 @@ const GameContent = () => {
               </div>
             ) : analysis ? (
               <AnalysisPanel analysis={analysis} moves={moves} />
+            ) : analysisError ? (
+              <div className="text-center py-8">
+                <p className="text-destructive">{analysisError}</p>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No analysis available for this game.</p>

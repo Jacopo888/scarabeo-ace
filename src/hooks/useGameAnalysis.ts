@@ -13,8 +13,8 @@ export interface GameMove {
   dir?: 'H' | 'V'
 }
 
-export const useGameAnalysis = (gameId: string | null) => {
-  const [moves, setMoves] = useState<GameMove[]>([])
+export const useGameAnalysis = (gameId: string | null, initialMoves: GameMove[] = []) => {
+  const [moves, setMoves] = useState<GameMove[]>(initialMoves)
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,8 +85,12 @@ export const useGameAnalysis = (gameId: string | null) => {
   }
 
   useEffect(() => {
-    fetchMoves()
-  }, [gameId])
+    if (initialMoves.length > 0) {
+      setMoves(initialMoves)
+    } else if (gameId) {
+      fetchMoves()
+    }
+  }, [gameId, initialMoves])
 
   return {
     moves,
