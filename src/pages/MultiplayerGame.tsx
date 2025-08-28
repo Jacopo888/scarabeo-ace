@@ -60,26 +60,6 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const { rating: myRating } = usePlayerRating(user?.id)
   const { rating: opponentRating } = usePlayerRating(opponentId)
 
-  if (!game || !gameState) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
-          <Link to="/dashboard">
-            <Button>Back to Dashboard</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  const opponent = getOpponentInfo()
-  const myScore = getMyScore()
-  const currentRack = getCurrentRack()
-
-  const selectedTile =
-    selectedTileIndex !== null ? (currentRack as any)[selectedTileIndex] : null
-
   const handleTileSelect = (index: number) => {
     if (!isMobile) return
     setSelectedTileIndex(prev => (prev === index ? null : index))
@@ -103,6 +83,26 @@ function MultiplayerGameContent({ gameId }: { gameId: string }) {
   const handleExchange = (indexes: number[]) => {
     exchangeTiles(indexes)
   }
+
+  if (!game || !gameState) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Game not found</h1>
+          <Link to="/dashboard">
+            <Button>Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const opponent = getOpponentInfo()
+  const myScore = getMyScore()
+  const currentRack = getCurrentRack()
+
+  const selectedTile =
+    selectedTileIndex !== null ? (currentRack as any)[selectedTileIndex] : null
 
   if (!user) {
     return <Navigate to="/auth" replace />

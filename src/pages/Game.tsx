@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Trophy, BarChart3 } from "lucide-react"
 import { useState, useEffect } from "react"
+import type { Tile } from '@/types/game'
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Link } from "react-router-dom"
 
@@ -37,7 +38,7 @@ const GameContent = () => {
 
   const isMobile = useIsMobile()
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null)
-  const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: any } | null>(null)
+  const [blankTile, setBlankTile] = useState<{ row: number, col: number, tile: Tile } | null>(null)
   const { moves, analysis, analyzeGame, loading: analysisLoading, error: analysisError } = useGameAnalysis(gameId, moveHistory)
 
   const humanPlayer = gameState.players.find(p => !p.isBot) || currentPlayer
@@ -215,9 +216,9 @@ const GameContent = () => {
                 boardMap={gameState.board}
                 pendingTiles={pendingTiles}
                 onPlaceTile={(row, col, tile) => {
-                  const gameTile = 'value' in tile && !('points' in tile)
-                    ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
-                    : tile as any
+                  const gameTile: Tile = 'value' in tile && !('points' in tile)
+                    ? { letter: tile.letter, points: tile.value, isBlank: tile.isBlank }
+                    : tile
                   if (gameTile.isBlank && gameTile.letter === '') {
                     setBlankTile({ row, col, tile: gameTile })
                   } else {

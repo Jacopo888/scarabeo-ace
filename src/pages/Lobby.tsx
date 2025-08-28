@@ -48,7 +48,7 @@ export default function Lobby() {
   return (
     <div className="container mx-auto p-6 max-w-3xl">
       <h1 className="text-2xl font-bold mb-4">Lobby</h1>
-      <Tabs value={tab} onValueChange={v => setTab(v as any)} className="w-full">
+      <Tabs value={tab} onValueChange={(v: 'blitz' | 'rapid' | 'async') => setTab(v)} className="w-full">
         <TabsList>
           <TabsTrigger value="blitz">Blitz</TabsTrigger>
           <TabsTrigger value="rapid">Rapid</TabsTrigger>
