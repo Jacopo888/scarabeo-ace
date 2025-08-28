@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
   });

@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDictionary } from '@/contexts/DictionaryContext';
 import { generateLocal15x15Puzzle } from '@/utils/puzzleGenerator15x15';
 import { DailyPuzzle, DailyScore, DailyLeaderboardEntry } from '@/types/daily';
+import type { Tile, PlacedTile } from '@/types/game';
 import { toast } from 'sonner';
 
 const getTodayNumber = (): number => {
@@ -46,17 +47,13 @@ const Daily = () => {
     try {
       // Try to fetch today's puzzle
       const { data: existingPuzzle, error } = await supabase
-        .from('daily_puzzles')
+        .from<DailyPuzzle>('daily_puzzles')
         .select('*')
         .eq('yyyymmdd', todayNumber)
         .single();
 
       if (existingPuzzle) {
-        setDailyPuzzle({
-          ...existingPuzzle,
-          board: existingPuzzle.board as any,
-          rack: existingPuzzle.rack as any
-        });
+        setDailyPuzzle(existingPuzzle);
       } else if (error?.code === 'PGRST116') {
         // No puzzle exists, create one
         await createTodaysPuzzle();
@@ -79,13 +76,13 @@ const Daily = () => {
 
       const newPuzzle = {
         yyyymmdd: todayNumber,
-        board: puzzle.board as any,
-        rack: puzzle.rack as any,
+        board: puzzle.board,
+        rack: puzzle.rack,
         best_score: bestScore,
       };
 
       const { data, error } = await supabase
-        .from('daily_puzzles')
+        .from<DailyPuzzle>('daily_puzzles')
         .insert(newPuzzle)
         .select()
         .single();
@@ -99,11 +96,7 @@ const Daily = () => {
         throw error;
       }
 
-      setDailyPuzzle({
-        ...data,
-        board: data.board as any,
-        rack: data.rack as any
-      });
+      setDailyPuzzle(data);
       toast.success('New daily puzzle generated!');
     } catch (error) {
       console.error('Error creating daily puzzle:', error);

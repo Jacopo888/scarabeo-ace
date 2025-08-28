@@ -54,7 +54,7 @@ export class ScrabbleSolver {
     const rackAdvice: RackAdvice[] = [];
 
     let cumMy = 0, cumOpp = 0;
-    let currentBoard = this.initializeBoard(boardSize);
+      const currentBoard = this.initializeBoard(boardSize);
 
     moves.forEach((move, index) => {
       const turn = index + 1;

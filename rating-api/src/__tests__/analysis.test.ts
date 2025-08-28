@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { describe, it, expect } from 'vitest';
 import { app } from '../index';
 
 describe('POST /analysis', () => {
@@ -51,7 +52,7 @@ describe('POST /analysis', () => {
 
     // Check timeline structure
     expect(response.body.timeline).toHaveLength(3);
-    response.body.timeline.forEach((entry: any, index: number) => {
+    response.body.timeline.forEach((entry: Record<string, unknown>, index: number) => {
       expect(entry).toHaveProperty('turn', index + 1);
       expect(entry).toHaveProperty('my');
       expect(entry).toHaveProperty('opp');

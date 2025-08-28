@@ -298,8 +298,8 @@ export const useMultiplayerGame = (gameId: string) => {
         updated_at: new Date().toISOString(),
       }
 
-      let player1RackAfter = isPlayer1 ? newRack : game.player1_rack
-      let player2RackAfter = isPlayer1 ? game.player2_rack : newRack
+        const player1RackAfter = isPlayer1 ? newRack : game.player1_rack
+        const player2RackAfter = isPlayer1 ? game.player2_rack : newRack
 
       let player1ScoreAfter = game.player1_score
       let player2ScoreAfter = game.player2_score

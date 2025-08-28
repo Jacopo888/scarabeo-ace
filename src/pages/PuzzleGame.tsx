@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -84,7 +84,7 @@ const PuzzleGame = () => {
     const searchParams = new URLSearchParams(location.search)
     const isDaily = searchParams.get('daily') === 'true'
     setIsDailyMode(isDaily)
-    
+
     if (isDaily && isDictionaryLoaded) {
       const dailyPuzzleData = sessionStorage.getItem('daily-puzzle')
       if (dailyPuzzleData) {
@@ -98,11 +98,11 @@ const PuzzleGame = () => {
         initializePuzzle(puzzleData)
       }
     }
-  }, [location, isDictionaryLoaded])
+  }, [location, isDictionaryLoaded, initializePuzzle])
 
   useEffect(() => {
     if (isDailyMode) return
-    
+
     if (apiPuzzle) {
       const puzzle: Puzzle = {
         id: apiPuzzle.puzzleId,
@@ -118,27 +118,27 @@ const PuzzleGame = () => {
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
       setIsRefetching(false)
-      
+
       toast({
         title: "Playing Offline",
         description: "Using local puzzle generation. Scores won't be saved.",
         variant: "default"
       })
     }
-  }, [apiPuzzle, puzzleError, isDictionaryLoaded, isDailyMode])
+  }, [apiPuzzle, puzzleError, isDictionaryLoaded, isDailyMode, initializePuzzle, isValidWord, toast])
 
   useEffect(() => {
     // Cleanup timer on unmount to prevent zombie timers
     return () => {
       stop()
     }
-  }, [])
+  }, [stop])
 
   useEffect(() => {
     if (timeLeft === 0 && isRunning) {
       endGame()
     }
-  }, [timeLeft, isRunning])
+  }, [timeLeft, isRunning, endGame])
 
   const resetAndRefetch = async () => {
     if (isRefetching) return
@@ -183,7 +183,7 @@ const PuzzleGame = () => {
     }
   }
 
-  const initializePuzzle = (puzzle: Puzzle) => {
+  const initializePuzzle = useCallback((puzzle: Puzzle) => {
     // Convert board array to Map for efficient lookups
     const boardMap = new Map<string, PlacedTile>()
     puzzle.board.forEach(tile => {
@@ -216,7 +216,7 @@ const PuzzleGame = () => {
       }
     })
     start(90) // 90 seconds
-  }
+  }, [isDictionaryLoaded, isValidWord, start])
 
   const handleTileSelect = (index: number) => {
     if (gameState.isGameOver) return
@@ -232,8 +232,8 @@ const PuzzleGame = () => {
 
     // Convert StoreTile to GameTile if needed
     const gameTile: Tile = 'value' in tile && !('points' in tile)
-      ? { letter: tile.letter, points: tile.value, isBlank: (tile as any).isBlank }
-      : tile as Tile
+      ? { letter: tile.letter, points: tile.value, isBlank: 'isBlank' in tile ? tile.isBlank : undefined }
+      : tile
     
     
     // Find the tile in remaining rack
@@ -412,7 +412,7 @@ const PuzzleGame = () => {
     }
   }
 
-  const endGame = async () => {
+  const endGame = useCallback(async () => {
     if (!gameState.puzzle || gameState.isGameOver) return
     
     setGameState(prev => ({ ...prev, isGameOver: true }))
@@ -443,7 +443,7 @@ const PuzzleGame = () => {
         setShowSubmissionError(true)
       }
     }
-  }
+  }, [gameState, isDailyMode, submitDailyScore, toast, user, currentPuzzleId])
 
   const retrySubmission = async () => {
     if (!user || !currentPuzzleId) return
@@ -642,9 +642,9 @@ const PuzzleGame = () => {
             boardMap={initialBoard}
             pendingTiles={gameState.pendingTiles}
             onPlaceTile={(row, col, tile) => {
-              const gameTile = 'value' in tile && !('points' in tile)
-                ? { letter: tile.letter, points: (tile as any).value, isBlank: (tile as any).isBlank }
-                : tile as Tile
+              const gameTile: Tile = 'value' in tile && !('points' in tile)
+                ? { letter: tile.letter, points: tile.value, isBlank: 'isBlank' in tile ? tile.isBlank : undefined }
+                : tile
               if (gameTile.isBlank && gameTile.letter === '') {
                 setBlankTile({ row, col, tile: gameTile })
               } else {

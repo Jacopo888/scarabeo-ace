@@ -3,7 +3,7 @@ import type { Tile } from '@/types/game';
 
 export interface DailyTodayResponse {
   yyyymmdd: number;
-  board: any;
+  board: (Tile | null)[][];
   racks: Tile[][];
 }
 

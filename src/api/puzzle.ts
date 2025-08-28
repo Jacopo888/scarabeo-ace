@@ -1,10 +1,12 @@
 // Determine API base URL - prefer VITE_RATING_API_URL, fallback to proxy in dev
 const API_BASE = import.meta.env.VITE_RATING_API_URL || (import.meta.env.MODE === 'development' ? '/api' : '')
 
+import type { Tile, PlacedTile } from '@/types/game'
+
 export interface PuzzleResponse {
   puzzleId: string
-  board: any[]
-  rack: any[]
+  board: PlacedTile[]
+  rack: Tile[]
   bestScore: number
 }
 

@@ -96,7 +96,7 @@ export default function DailyChallengePage() {
     const sameRow = pending.every((t) => t.row === pending[0].row);
     const sameCol = pending.every((t) => t.col === pending[0].col);
     if (!sameRow && !sameCol) return 0;
-    let wordTiles: PlacedTile[] = [];
+      const wordTiles: PlacedTile[] = [];
     if (sameRow) {
       const row = pending[0].row;
       let c = Math.min(...pending.map((t) => t.col));
