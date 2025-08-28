@@ -53,10 +53,9 @@ const getSquareColor = (type: string) => {
 
 const getSquareText = (type: string) => {
   switch (type) {
-    // Use Italian abbreviations on the board for mobile/desktop
-    // TW/DW => 3P/2P (Tripla/ Doppia Parola), TL/DL => 3L/2L (Lettera)
-    case "TW": return "3P"
-    case "DW": return "2P"
+    // English abbreviations: 3W/2W for word, 3L/2L for letter
+    case "TW": return "3W"
+    case "DW": return "2W"
     case "TL": return "3L"
     case "DL": return "2L"
     case "STAR": return "★"
@@ -228,7 +227,7 @@ export const ScrabbleBoard = ({
       <div
         key={key}
         className={cn(
-          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all rounded relative",
+          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all rounded relative overflow-hidden box-border shrink-0",
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
@@ -250,21 +249,19 @@ export const ScrabbleBoard = ({
         }}
       >
         {displayTile ? (
-          <div>
-            <ScrabbleTile
-              letter={displayTile.letter}
-              points={('value' in displayTile ? displayTile.value : displayTile.points) as number}
-              isOnBoard={true}
-              draggable={!!pendingTile && !disabled}
-              isDragging={draggingTile === key}
-              onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
-              onDragEnd={pendingTile ? handleTileDragEnd : undefined}
-              className={cn(
-                "w-8 h-8 sm:w-9 sm:h-9 text-[9px] sm:text-[10px]",
-                pendingTile && "ring-2 ring-primary/50"
-              )}
-            />
-          </div>
+          <ScrabbleTile
+            letter={displayTile.letter}
+            points={('value' in displayTile ? displayTile.value : displayTile.points) as number}
+            isOnBoard={true}
+            draggable={!!pendingTile && !disabled}
+            isDragging={draggingTile === key}
+            onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
+            onDragEnd={pendingTile ? handleTileDragEnd : undefined}
+            className={cn(
+              "w-8 h-8 sm:w-9 sm:h-9 text-[9px] sm:text-[10px]",
+              pendingTile && "ring-2 ring-primary/50"
+            )}
+          />
         ) : (
           getSquareText(specialType || "")
         )}

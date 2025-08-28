@@ -95,6 +95,16 @@ export async function postAnalysis(payload: AnalysisRequest): Promise<AnalysisRe
     const errorText = await response.text().catch(() => 'Unknown error')
     throw new Error(`Analysis failed: ${response.status} - ${errorText}`)
   }
-
-  return response.json()
+  // Guard against HTML or non-JSON responses (e.g. proxies returning index.html)
+  const contentType = response.headers.get('content-type') || ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    const text = await response.text().catch(() => '')
+    throw new Error(text ? `Analysis service returned non-JSON response: ${text.slice(0, 180)}...` : 'Analysis service returned non-JSON response')
+  }
+  try {
+    return await response.json()
+  } catch (err) {
+    const text = await response.text().catch(() => '')
+    throw new Error(text ? `Invalid JSON from analysis service: ${text.slice(0, 180)}...` : 'Invalid JSON from analysis service')
+  }
 }
