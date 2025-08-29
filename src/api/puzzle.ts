@@ -1,5 +1,5 @@
-// Determine API base URL - prefer VITE_RATING_API_URL, fallback to proxy in dev
-const API_BASE = import.meta.env.VITE_RATING_API_URL || (import.meta.env.MODE === 'development' ? '/api' : '')
+// Use Supabase Edge Function URL directly
+const API_BASE = 'https://qjpvhhijujqblazdlfeg.supabase.co/functions/v1'
 
 import type { Tile, PlacedTile } from '@/types/game'
 

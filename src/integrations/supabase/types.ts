@@ -321,6 +321,62 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzle_scores: {
+        Row: {
+          created_at: string | null
+          id: string
+          puzzle_id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          puzzle_id: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          puzzle_id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puzzle_scores_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      puzzles: {
+        Row: {
+          best_score: number
+          board: Json
+          created_at: string | null
+          id: string
+          rack: Json
+        }
+        Insert: {
+          best_score: number
+          board: Json
+          created_at?: string | null
+          id?: string
+          rack: Json
+        }
+        Update: {
+          best_score?: number
+          board?: Json
+          created_at?: string | null
+          id?: string
+          rack?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
