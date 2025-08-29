@@ -34,12 +34,16 @@ export const ScrabbleTile = ({
   const displayPoints = isBlank ? '★' : points
   return (
     <motion.div
-      layout
+      layout={!isOnBoard} // Disable layout animation on board to prevent conflicts
       whileHover={!isOnBoard ? { y: -4, scale: 1.05 } : {}}
-      whileTap={{ scale: 0.95 }}
+      whileTap={!isOnBoard ? { scale: 0.95 } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        "w-12 h-12 bg-tile rounded-md flex flex-col items-center justify-center transition-all select-none",
+        // Responsive dimensions that match board cells
+        isOnBoard 
+          ? "w-8 h-8 sm:w-9 sm:h-9" 
+          : "w-12 h-12",
+        "bg-tile rounded-md flex flex-col items-center justify-center transition-all select-none",
         // Use thinner border and smaller shadow on-board to fit in small squares
         isOnBoard ? "border border-tile-text shadow" : "border-2 border-tile-text shadow-md",
         draggable && "cursor-grab",
@@ -57,8 +61,8 @@ export const ScrabbleTile = ({
       <span
         className={cn(
           "text-tile-text font-bold leading-none",
-          // Smaller letter on-board for compact cells
-          isOnBoard ? "text-sm" : "text-lg"
+          // Responsive text sizes for mobile
+          isOnBoard ? "text-[10px] sm:text-xs" : "text-lg"
         )}
       >
         {displayLetter}
@@ -66,8 +70,8 @@ export const ScrabbleTile = ({
       <span
         className={cn(
           "text-tile-text leading-none mt-px",
-          // Smaller corner points on-board
-          isOnBoard ? "text-[10px]" : "text-xs"
+          // Responsive points size
+          isOnBoard ? "text-[8px] sm:text-[9px]" : "text-xs"
         )}
       >
         {displayPoints}

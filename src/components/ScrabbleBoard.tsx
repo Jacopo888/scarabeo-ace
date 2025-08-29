@@ -106,7 +106,7 @@ export const ScrabbleBoard = ({
     const container = boardRef.current.parentElement
     if (!container) return
 
-    const ro = new ResizeObserver(() => {
+    const updateScale = () => {
       const boardWidth = boardRef.current?.scrollWidth || 0
       const styles = getComputedStyle(container)
       const paddingLeft = parseFloat(styles.paddingLeft) || 0
@@ -114,9 +114,14 @@ export const ScrabbleBoard = ({
       const available = (container.clientWidth || window.innerWidth) - (paddingLeft + paddingRight)
       const scale = boardWidth > 0 ? Math.min(1, available / boardWidth) : 1
       setBoardScale(scale)
-    })
+    }
 
+    const ro = new ResizeObserver(updateScale)
     ro.observe(container)
+    
+    // Initial calculation
+    updateScale()
+    
     return () => ro.disconnect()
   }, [])
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
@@ -279,8 +284,12 @@ export const ScrabbleBoard = ({
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform"
-        style={{ width: 'fit-content', transform: `scale(${boardScale})`, transformOrigin: 'top center' }}
+        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform will-change-transform"
+        style={{ 
+          width: 'fit-content', 
+          transform: `scale(${boardScale})`, 
+          transformOrigin: 'top left' // Consistent with CSS class
+        }}
       >
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
