@@ -113,22 +113,13 @@ export const ScrabbleBoard = ({
       const paddingRight = parseFloat(styles.paddingRight) || 0
       const available = (container.clientWidth || window.innerWidth) - (paddingLeft + paddingRight)
       const scale = boardWidth > 0 ? Math.min(1, available / boardWidth) : 1
-      
-      // Avoid unnecessary re-renders by checking if scale actually changed
-      setBoardScale(prevScale => {
-        const roundedScale = Math.round(scale * 100) / 100
-        const roundedPrevScale = Math.round(prevScale * 100) / 100
-        return roundedScale !== roundedPrevScale ? roundedScale : prevScale
-      })
+      setBoardScale(scale)
     }
 
-    const ro = new ResizeObserver(() => {
-      // Debounce the scale update to prevent excessive calculations
-      requestAnimationFrame(updateScale)
-    })
-
+    const ro = new ResizeObserver(updateScale)
     ro.observe(container)
-    // Initial scale calculation
+    
+    // Initial calculation
     updateScale()
     
     return () => ro.disconnect()
@@ -295,13 +286,11 @@ export const ScrabbleBoard = ({
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left"
+        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform will-change-transform"
         style={{ 
           width: 'fit-content', 
           transform: `scale(${boardScale})`, 
-          transformOrigin: 'top center',
-          // Prevent transform conflicts with Framer Motion
-          willChange: 'transform'
+          transformOrigin: 'top left' // Consistent with CSS class
         }}
       >
         {Array.from({ length: 15 }, (_, row) =>
