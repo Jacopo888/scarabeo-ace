@@ -34,16 +34,17 @@ export const ScrabbleTile = ({
   const displayPoints = isBlank ? '★' : points
   return (
     <motion.div
-      layout={!isOnBoard} // Disable layout animation on board to prevent conflicts
+      layout={!isOnBoard} // Disable layout animations when on board to prevent grid conflicts
       whileHover={!isOnBoard ? { y: -4, scale: 1.05 } : {}}
-      whileTap={!isOnBoard ? { scale: 0.95 } : {}}
+      whileTap={!isOnBoard ? { scale: 0.95 } : {}} // Disable tap animations on board to prevent position shifts
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        // Responsive dimensions that match board cells
-        isOnBoard 
-          ? "w-8 h-8 sm:w-9 sm:h-9" 
-          : "w-12 h-12",
-        "bg-tile rounded-md flex flex-col items-center justify-center transition-all select-none",
+        // Responsive dimensions: match board cell sizes
+        isOnBoard ? "w-8 h-8 sm:w-9 sm:h-9" : "w-12 h-12",
+        "bg-tile rounded-md flex flex-col items-center justify-center select-none",
+        // Different transition behavior for on-board vs off-board tiles
+        isOnBoard ? "transition-colors" : "transition-all",
+
         // Use thinner border and smaller shadow on-board to fit in small squares
         isOnBoard ? "border border-tile-text shadow" : "border-2 border-tile-text shadow-md",
         draggable && "cursor-grab",

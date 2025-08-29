@@ -232,7 +232,7 @@ export const ScrabbleBoard = ({
       <div
         key={key}
         className={cn(
-          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all rounded relative overflow-hidden box-border shrink-0",
+          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold rounded relative box-border shrink-0",
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
@@ -263,7 +263,7 @@ export const ScrabbleBoard = ({
             onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
             onDragEnd={pendingTile ? handleTileDragEnd : undefined}
             className={cn(
-              "w-8 h-8 sm:w-9 sm:h-9 text-[9px] sm:text-[10px]",
+              "text-[9px] sm:text-[10px]",
               pendingTile && "ring-2 ring-primary/50"
             )}
           />
@@ -279,6 +279,8 @@ export const ScrabbleBoard = ({
       className={cn(
         // Tighter padding on mobile to maximize available space
         "bg-board p-2 sm:p-4 rounded-lg shadow-lg max-w-full overflow-hidden mx-auto",
+        // Ensure proper containment for scaled content
+        "flex flex-col items-center justify-center",
         disabled && "opacity-50 pointer-events-none"
       )}
     >
