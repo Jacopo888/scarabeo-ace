@@ -44,6 +44,7 @@ export const ScrabbleTile = ({
         "bg-tile rounded-md flex flex-col items-center justify-center select-none",
         // Different transition behavior for on-board vs off-board tiles
         isOnBoard ? "transition-colors" : "transition-all",
+
         // Use thinner border and smaller shadow on-board to fit in small squares
         isOnBoard ? "border border-tile-text shadow" : "border-2 border-tile-text shadow-md",
         draggable && "cursor-grab",
@@ -61,8 +62,8 @@ export const ScrabbleTile = ({
       <span
         className={cn(
           "text-tile-text font-bold leading-none",
-          // Smaller letter on-board for compact cells
-          isOnBoard ? "text-sm" : "text-lg"
+          // Responsive text sizes for mobile
+          isOnBoard ? "text-[10px] sm:text-xs" : "text-lg"
         )}
       >
         {displayLetter}
@@ -70,8 +71,8 @@ export const ScrabbleTile = ({
       <span
         className={cn(
           "text-tile-text leading-none mt-px",
-          // Smaller corner points on-board
-          isOnBoard ? "text-[10px]" : "text-xs"
+          // Responsive points size
+          isOnBoard ? "text-[8px] sm:text-[9px]" : "text-xs"
         )}
       >
         {displayPoints}
