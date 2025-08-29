@@ -106,17 +106,31 @@ export const ScrabbleBoard = ({
     const container = boardRef.current.parentElement
     if (!container) return
 
-    const ro = new ResizeObserver(() => {
+    const updateScale = () => {
       const boardWidth = boardRef.current?.scrollWidth || 0
       const styles = getComputedStyle(container)
       const paddingLeft = parseFloat(styles.paddingLeft) || 0
       const paddingRight = parseFloat(styles.paddingRight) || 0
       const available = (container.clientWidth || window.innerWidth) - (paddingLeft + paddingRight)
       const scale = boardWidth > 0 ? Math.min(1, available / boardWidth) : 1
-      setBoardScale(scale)
+      
+      // Avoid unnecessary re-renders by checking if scale actually changed
+      setBoardScale(prevScale => {
+        const roundedScale = Math.round(scale * 100) / 100
+        const roundedPrevScale = Math.round(prevScale * 100) / 100
+        return roundedScale !== roundedPrevScale ? roundedScale : prevScale
+      })
+    }
+
+    const ro = new ResizeObserver(() => {
+      // Debounce the scale update to prevent excessive calculations
+      requestAnimationFrame(updateScale)
     })
 
     ro.observe(container)
+    // Initial scale calculation
+    updateScale()
+    
     return () => ro.disconnect()
   }, [])
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
@@ -227,7 +241,7 @@ export const ScrabbleBoard = ({
       <div
         key={key}
         className={cn(
-          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all rounded relative overflow-hidden box-border shrink-0",
+          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold rounded relative box-border shrink-0",
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
@@ -258,7 +272,7 @@ export const ScrabbleBoard = ({
             onDragStart={pendingTile ? (e) => handleTileDragStart(e, row, col, displayTile as any) : undefined}
             onDragEnd={pendingTile ? handleTileDragEnd : undefined}
             className={cn(
-              "w-8 h-8 sm:w-9 sm:h-9 text-[9px] sm:text-[10px]",
+              "text-[9px] sm:text-[10px]",
               pendingTile && "ring-2 ring-primary/50"
             )}
           />
@@ -274,13 +288,21 @@ export const ScrabbleBoard = ({
       className={cn(
         // Tighter padding on mobile to maximize available space
         "bg-board p-2 sm:p-4 rounded-lg shadow-lg max-w-full overflow-hidden mx-auto",
+        // Ensure proper containment for scaled content
+        "flex flex-col items-center justify-center",
         disabled && "opacity-50 pointer-events-none"
       )}
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform"
-        style={{ width: 'fit-content', transform: `scale(${boardScale})`, transformOrigin: 'top center' }}
+        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left"
+        style={{ 
+          width: 'fit-content', 
+          transform: `scale(${boardScale})`, 
+          transformOrigin: 'top center',
+          // Prevent transform conflicts with Framer Motion
+          willChange: 'transform'
+        }}
       >
         {Array.from({ length: 15 }, (_, row) =>
           Array.from({ length: 15 }, (_, col) => renderSquare(row, col))
