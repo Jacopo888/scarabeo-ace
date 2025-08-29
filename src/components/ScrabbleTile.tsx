@@ -63,7 +63,7 @@ export const ScrabbleTile = ({
         className={cn(
           "text-tile-text font-bold leading-none",
           // Responsive text sizes for mobile
-          isOnBoard ? "text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs" : "text-lg"
+          isOnBoard ? "text-[9px] xs:text-[10px] sm:text-[11px] md:text-sm" : "text-xl"
         )}
       >
         {displayLetter}
@@ -72,7 +72,7 @@ export const ScrabbleTile = ({
         className={cn(
           "text-tile-text leading-none mt-px",
           // Responsive points size
-          isOnBoard ? "text-[6px] xs:text-[7px] sm:text-[8px] md:text-[9px]" : "text-xs"
+          isOnBoard ? "text-[7px] xs:text-[8px] sm:text-[9px] md:text-[10px]" : "text-sm"
         )}
       >
         {displayPoints}
