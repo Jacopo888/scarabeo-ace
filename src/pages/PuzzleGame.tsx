@@ -86,15 +86,8 @@ const PuzzleGame = () => {
       boardMap.set(`${tile.row},${tile.col}`, tile)
     })
     
-    // If puzzle has no topMoves (API puzzle), generate them locally
-    let finalPuzzle = puzzle
-    if (puzzle.topMoves.length === 0 && isDictionaryLoaded) {
-      const localTopMoves = getTopMovesForBoard(boardMap, puzzle.rack, isValidWord, isDictionaryLoaded)
-      finalPuzzle = {
-        ...puzzle,
-        topMoves: localTopMoves
-      }
-    }
+    // Defer heavy top-move generation; initialize with empty topMoves
+    const finalPuzzle = puzzle
     
     setInitialBoard(boardMap)
     setGameState({
@@ -112,7 +105,7 @@ const PuzzleGame = () => {
       }
     })
     start(90) // 90 seconds
-  }, [isDictionaryLoaded, isValidWord, start])
+  }, [start])
 
   const submitDailyScore = async (score: number) => {
     try {
@@ -205,7 +198,8 @@ const PuzzleGame = () => {
       setCurrentPuzzleId(apiPuzzle.puzzleId)
       setIsRefetching(false)
     } else if (puzzleError && isDictionaryLoaded) {
-      const localPuzzle = generateLocal15x15Puzzle(isValidWord, isDictionaryLoaded, false, 6)
+      // Use light mode and fewer simulation turns to avoid heavy CPU usage
+      const localPuzzle = generateLocal15x15Puzzle(isValidWord, isDictionaryLoaded, true, 1)
       initializePuzzle(localPuzzle)
       setCurrentPuzzleId(null)
       setIsRefetching(false)
@@ -230,6 +224,32 @@ const PuzzleGame = () => {
       endGame()
     }
   }, [timeLeft, isRunning, endGame])
+
+  // Defer top moves generation until after initial render to prevent blocking
+  useEffect(() => {
+    if (!gameState.puzzle) return
+    if (gameState.puzzle.topMoves.length > 0) return
+    if (!isDictionaryLoaded) return
+
+    // Generate in a microtask so the UI can paint
+    const id = setTimeout(() => {
+      const localTopMoves = getTopMovesForBoard(initialBoard, gameState.puzzle!.rack, isValidWord, isDictionaryLoaded)
+      setGameState(prev => {
+        if (!prev.puzzle) return prev
+        // If already filled, skip
+        if (prev.puzzle.topMoves.length > 0) return prev
+        const updated = {
+          ...prev,
+          puzzle: {
+            ...prev.puzzle,
+            topMoves: localTopMoves
+          }
+        }
+        return updated
+      })
+    }, 0)
+    return () => clearTimeout(id)
+  }, [gameState.puzzle, isDictionaryLoaded, isValidWord, initialBoard])
 
   const resetAndRefetch = async () => {
     if (isRefetching) return

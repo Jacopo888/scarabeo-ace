@@ -137,7 +137,7 @@ function simulateAdditionalMoves(
     }
     
     const moves = bot.generateAllPossibleMoves(gameState, currentRack)
-    const validMoves = moves.filter(move => move.score >= 15 && move.tiles.length >= 2)
+    const validMoves = moves.filter(move => move.score >= 15 && move.tiles.length >= 2).slice(0, 20)
     
     if (validMoves.length > 0) {
       const selectedMove = validMoves[Math.floor(Math.random() * Math.min(3, validMoves.length))]
@@ -247,7 +247,7 @@ function generateTopMovesWithBot(
     gameStatus: 'playing' as const
   }
   
-  const allMoves = bot.generateAllPossibleMoves(gameState, rack)
+  const allMoves = bot.generateAllPossibleMoves(gameState, rack).slice(0, 200)
   
   // Filter for high-scoring moves, then select a mixed set (directions/anchors)
   const filtered = allMoves

@@ -21,6 +21,11 @@ interface MoveCandidate {
 export class ScrabbleBot {
   private isValidWordFn: (word: string) => boolean
   private isDictionaryLoaded: boolean
+  // Hard caps to prevent heavy synchronous work from blocking the UI
+  private static readonly MAX_ANCHOR_POSITIONS = 24
+  private static readonly MAX_PERMUTATION_RESULTS = 40
+  private static readonly MAX_CANDIDATES_PER_ANCHOR = 120
+  private static readonly MAX_WORD_LENGTH = 5
 
   constructor(isValidWordFn: (word: string) => boolean, isDictionaryLoaded: boolean) {
     this.isValidWordFn = isValidWordFn
@@ -112,7 +117,7 @@ export class ScrabbleBot {
 
   private generateAdjacentMoves(board: Map<string, PlacedTile>, rack: Tile[]): BotMove[] {
     const moves: BotMove[] = []
-    const adjacentPositions = this.findAdjacentPositions(board)
+    const adjacentPositions = this.prioritizeAdjacentPositions(this.findAdjacentPositions(board))
     
     for (const [row, col] of adjacentPositions) {
       const candidates = this.generateTileCombinations(rack, row, col, false)
@@ -156,15 +161,22 @@ export class ScrabbleBot {
   private generateTileCombinations(rack: Tile[], startRow: number, startCol: number, mustCoverCenter: boolean): MoveCandidate[] {
     const candidates: MoveCandidate[] = []
     const centerRow = 7, centerCol = 7
+    const maxLen = Math.min(ScrabbleBot.MAX_WORD_LENGTH, rack.length)
+    const pushCandidate = (tiles: PlacedTile[], indices: number[]) => {
+      if (candidates.length < ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) {
+        candidates.push({ tiles, usedTileIndices: indices })
+      }
+    }
     
     // Try horizontal words
-    for (let length = 1; length <= Math.min(rack.length, 7); length++) {
+    for (let length = 2; length <= maxLen; length++) {
+      if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
       for (let startOffset = 0; startOffset <= length - 1; startOffset++) {
         const actualStartCol = startCol - startOffset
         if (actualStartCol < 0 || actualStartCol + length > 15) continue
         
         // Generate permutations of rack tiles for this length
-        const permutations = this.generatePermutations(rack, length)
+        const permutations = this.generatePermutations(rack, length, ScrabbleBot.MAX_PERMUTATION_RESULTS)
         for (const perm of permutations) {
           const tiles = perm.tiles.map((tile, i) => ({
             ...tile,
@@ -174,19 +186,22 @@ export class ScrabbleBot {
           
           const coversCenterCheck = !mustCoverCenter || tiles.some(t => t.row === centerRow && t.col === centerCol)
           if (coversCenterCheck) {
-            candidates.push({ tiles, usedTileIndices: perm.indices })
+            pushCandidate(tiles as PlacedTile[], perm.indices)
+            if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
           }
         }
+        if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
       }
     }
     
     // Try vertical words
-    for (let length = 1; length <= Math.min(rack.length, 7); length++) {
+    for (let length = 2; length <= maxLen; length++) {
+      if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
       for (let startOffset = 0; startOffset <= length - 1; startOffset++) {
         const actualStartRow = startRow - startOffset
         if (actualStartRow < 0 || actualStartRow + length > 15) continue
         
-        const permutations = this.generatePermutations(rack, length)
+        const permutations = this.generatePermutations(rack, length, ScrabbleBot.MAX_PERMUTATION_RESULTS)
         for (const perm of permutations) {
           const tiles = perm.tiles.map((tile, i) => ({
             ...tile,
@@ -196,25 +211,29 @@ export class ScrabbleBot {
           
           const coversCenterCheck = !mustCoverCenter || tiles.some(t => t.row === centerRow && t.col === centerCol)
           if (coversCenterCheck) {
-            candidates.push({ tiles, usedTileIndices: perm.indices })
+            pushCandidate(tiles as PlacedTile[], perm.indices)
+            if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
           }
         }
+        if (candidates.length >= ScrabbleBot.MAX_CANDIDATES_PER_ANCHOR) break
       }
     }
     
     return candidates
   }
 
-  private generatePermutations(rack: Tile[], length: number): Array<{ tiles: Tile[], indices: number[] }> {
+  private generatePermutations(rack: Tile[], length: number, limit = ScrabbleBot.MAX_PERMUTATION_RESULTS): Array<{ tiles: Tile[], indices: number[] }> {
     const results: Array<{ tiles: Tile[], indices: number[] }> = []
     
     const backtrack = (currentTiles: Tile[], currentIndices: number[], usedIndices: Set<number>) => {
+      if (results.length >= limit) return
       if (currentTiles.length === length) {
         results.push({ tiles: [...currentTiles], indices: [...currentIndices] })
         return
       }
       
       for (let i = 0; i < rack.length; i++) {
+        if (results.length >= limit) break
         if (!usedIndices.has(i)) {
           usedIndices.add(i)
           currentTiles.push(rack[i])
@@ -228,7 +247,18 @@ export class ScrabbleBot {
     }
     
     backtrack([], [], new Set())
-    return results.slice(0, 100) // Limit to prevent performance issues
+    return results
+  }
+
+  private prioritizeAdjacentPositions(positions: Array<[number, number]>): Array<[number, number]> {
+    const centerRow = 7
+    const centerCol = 7
+    const sorted = [...positions].sort((a, b) => {
+      const da = Math.abs(a[0] - centerRow) + Math.abs(a[1] - centerCol)
+      const db = Math.abs(b[0] - centerRow) + Math.abs(b[1] - centerCol)
+      return da - db
+    })
+    return sorted.slice(0, ScrabbleBot.MAX_ANCHOR_POSITIONS)
   }
 
   private findAdjacentPositions(board: Map<string, PlacedTile>): Array<[number, number]> {
