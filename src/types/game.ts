@@ -29,33 +29,37 @@ export interface GameState {
 }
 
 // Standard Scrabble tile distribution
+// Important: create a UNIQUE object for each tile instance to avoid reference sharing.
+const makeTiles = (letter: string, points: number, count: number, isBlank = false): Tile[] =>
+  Array.from({ length: count }, () => ({ letter, points, isBlank }))
+
 export const TILE_DISTRIBUTION: Tile[] = [
   // A-Z with English Scrabble distribution
-  ...Array(9).fill({ letter: 'A', points: 1 }),
-  ...Array(2).fill({ letter: 'B', points: 3 }),
-  ...Array(2).fill({ letter: 'C', points: 3 }),
-  ...Array(4).fill({ letter: 'D', points: 2 }),
-  ...Array(12).fill({ letter: 'E', points: 1 }),
-  ...Array(2).fill({ letter: 'F', points: 4 }),
-  ...Array(3).fill({ letter: 'G', points: 2 }),
-  ...Array(2).fill({ letter: 'H', points: 4 }),
-  ...Array(9).fill({ letter: 'I', points: 1 }),
-  { letter: 'J', points: 8 },
-  { letter: 'K', points: 5 },
-  ...Array(4).fill({ letter: 'L', points: 1 }),
-  ...Array(2).fill({ letter: 'M', points: 3 }),
-  ...Array(6).fill({ letter: 'N', points: 1 }),
-  ...Array(8).fill({ letter: 'O', points: 1 }),
-  ...Array(2).fill({ letter: 'P', points: 3 }),
-  { letter: 'Q', points: 10 },
-  ...Array(6).fill({ letter: 'R', points: 1 }),
-  ...Array(4).fill({ letter: 'S', points: 1 }),
-  ...Array(6).fill({ letter: 'T', points: 1 }),
-  ...Array(4).fill({ letter: 'U', points: 1 }),
-  ...Array(2).fill({ letter: 'V', points: 4 }),
-  ...Array(2).fill({ letter: 'W', points: 4 }),
-  { letter: 'X', points: 8 },
-  ...Array(2).fill({ letter: 'Y', points: 4 }),
-  { letter: 'Z', points: 10 },
-  ...Array(2).fill({ letter: '', points: 0, isBlank: true }) // Blank tiles
+  ...makeTiles('A', 1, 9),
+  ...makeTiles('B', 3, 2),
+  ...makeTiles('C', 3, 2),
+  ...makeTiles('D', 2, 4),
+  ...makeTiles('E', 1, 12),
+  ...makeTiles('F', 4, 2),
+  ...makeTiles('G', 2, 3),
+  ...makeTiles('H', 4, 2),
+  ...makeTiles('I', 1, 9),
+  ...makeTiles('J', 8, 1),
+  ...makeTiles('K', 5, 1),
+  ...makeTiles('L', 1, 4),
+  ...makeTiles('M', 3, 2),
+  ...makeTiles('N', 1, 6),
+  ...makeTiles('O', 1, 8),
+  ...makeTiles('P', 3, 2),
+  ...makeTiles('Q', 10, 1),
+  ...makeTiles('R', 1, 6),
+  ...makeTiles('S', 1, 4),
+  ...makeTiles('T', 1, 6),
+  ...makeTiles('U', 1, 4),
+  ...makeTiles('V', 4, 2),
+  ...makeTiles('W', 4, 2),
+  ...makeTiles('X', 8, 1),
+  ...makeTiles('Y', 4, 2),
+  ...makeTiles('Z', 10, 1),
+  ...makeTiles('', 0, 2, true) // Blank tiles
 ]
