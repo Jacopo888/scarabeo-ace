@@ -277,8 +277,8 @@ export const ScrabbleBoard = ({
   return (
     <div
       className={cn(
-        // Tighter padding on mobile to maximize available space
-        "bg-board p-2 sm:p-4 rounded-lg shadow-lg max-w-full overflow-hidden mx-auto",
+        // Minimal padding on mobile to maximize board space
+        "bg-board p-1 sm:p-2 md:p-4 rounded-lg shadow-lg max-w-full overflow-hidden mx-auto",
         // Ensure proper containment for scaled content
         "flex flex-col items-center justify-center",
         disabled && "opacity-50 pointer-events-none"
@@ -286,7 +286,7 @@ export const ScrabbleBoard = ({
     >
       <div
         ref={boardRef}
-        className="grid grid-cols-15 gap-[1px] bg-board-border p-1 sm:p-2 rounded origin-top-left transition-transform will-change-transform"
+        className="grid grid-cols-15 gap-[0.5px] bg-board-border p-0.5 sm:p-1 md:p-2 rounded origin-top-left transition-transform will-change-transform"
         style={{ 
           width: 'fit-content', 
           transform: `scale(${boardScale})`, 
