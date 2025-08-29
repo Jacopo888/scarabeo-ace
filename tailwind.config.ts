@@ -14,9 +14,10 @@ export default {
 		container: {
 			center: true,
 			padding: '2rem',
-			screens: {
-				'2xl': '1400px'
-			}
+		screens: {
+			'xs': '420px',
+			'2xl': '1400px'
+		}
 		},
 		fontFamily: {
 			sans: ['Rubik', 'system-ui', 'sans-serif'],

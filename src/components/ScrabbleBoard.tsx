@@ -232,7 +232,7 @@ export const ScrabbleBoard = ({
       <div
         key={key}
         className={cn(
-          "w-9 h-9 sm:w-10 sm:h-10 border border-board-border flex items-center justify-center text-[10px] sm:text-xs font-bold rounded relative box-border shrink-0",
+          "w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 border border-board-border flex items-center justify-center text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs font-bold rounded relative box-border shrink-0",
           getSquareColor(specialType || ""),
           !currentTile && "cursor-pointer",
           isDragOver && "ring-2 ring-primary ring-opacity-50 bg-primary/10",
